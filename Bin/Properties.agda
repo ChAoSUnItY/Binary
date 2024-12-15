@@ -4,10 +4,10 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; cong-app; subst)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
-open import Bin.Base using (Bin; O; I; Binary; negate; flip; inc; dec; twoComplement)
+open import Bin.Base using (Bit; O; I; Binary; negate; flip; inc; dec; twoComplement)
 
 -- negate properties
-negate-involution : ∀ (x : Bin) → negate (negate x) ≡ x
+negate-involution : ∀ (x : Bit) → negate (negate x) ≡ x
 negate-involution O = refl
 negate-involution I = refl
 

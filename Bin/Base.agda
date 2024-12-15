@@ -5,18 +5,18 @@ open import Data.Nat using (ℕ; zero; suc; _+_; _*_)
 open import Data.Bool using (Bool; true; false; not)
 open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
 
-data Bin : Set where
-  O : Bin
-  I : Bin
+data Bit : Set where
+  O : Bit
+  I : Bit
 
-negate : Bin → Bin
+negate : Bit → Bit
 negate O = I
 negate I = O
 
 -- In this case, we simluate the binary operations
 -- in big endian to best fit Vec's data structure.
 Binary : ℕ → Set
-Binary n = Vec Bin n
+Binary n = Vec Bit n
 
 zeroᴮ : ∀ (n : ℕ) → Binary n
 zeroᴮ 0       = []
@@ -26,7 +26,7 @@ onesᴮ : ∀ (n : ℕ) → Binary n
 onesᴮ 0       = []
 onesᴮ (suc n) = I ∷ (onesᴮ n)
 
-append : ∀ {n} → Binary n → Bin → Binary (suc n)
+append : ∀ {n} → Binary n → Bit → Binary (suc n)
 append []       x = x ∷ []
 append (y ∷ ys) x = y ∷ append ys x
 
