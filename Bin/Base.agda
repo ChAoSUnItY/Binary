@@ -48,19 +48,20 @@ flip : ∀ {n} → Binary n → Binary n
 flip [] = []
 flip (x ∷ xs) = negate x ∷ flip xs
 
+-- TODO: Maybe don't discard carry?
 -- Adds 2 binary number, may cause overflow
 add : ∀ {n} → Binary n → Binary n → Binary n
-add xs ys = add' xs ys false
+add xs ys = add' xs ys O
   where
-    add' : ∀ {n} → Binary n → Binary n → (carry : Bool) → Binary n
+    add' : ∀ {n} → Binary n → Binary n → Bit → Binary n
     add' []       []       _     = []
     add' (x ∷ xs) (y ∷ ys) carry with x | y | carry
-    ...                          | O | O | false = O ∷ add' xs ys false
-    ...                          | O | O | true  = I ∷ add' xs ys false
-    ...                          | I | I | false = O ∷ add' xs ys true
-    ...                          | I | I | true  = I ∷ add' xs ys true
-    ...                          | _ | _ | false = I ∷ add' xs ys false
-    ...                          | _ | _ | true  = O ∷ add' xs ys true
+    ...                          | O | O | O = O ∷ add' xs ys O
+    ...                          | O | O | I = I ∷ add' xs ys O
+    ...                          | I | I | O = O ∷ add' xs ys I
+    ...                          | I | I | I = I ∷ add' xs ys I
+    ...                          | _ | _ | O = I ∷ add' xs ys O
+    ...                          | _ | _ | I = O ∷ add' xs ys I
 
 -- Increment by 1
 inc : ∀ {n} → Binary n → Binary n
@@ -74,10 +75,10 @@ dec [] = []
 dec (O ∷ xs) = I ∷ dec xs
 dec (I ∷ xs) = O ∷ xs
 
--- Converts to two complement
-twoComplement : ∀ {n} → Binary n → Binary n
-twoComplement [] = []
-twoComplement (x ∷ xs) = inc (flip (x ∷ xs))
+-- Bitwise negation, which converts binary by two's complement
+~_ : ∀ {n} → Binary n → Binary n
+~ [] = []
+~ (x ∷ xs) = inc (flip (x ∷ xs))
 
 -- Logical left shift by 1
 _<<ᴸ1 : ∀ {n} → Binary n → Binary n
@@ -90,12 +91,12 @@ _>>ᴿ1 : ∀ {n} → Binary n → Binary n
 (_ ∷ xs) >>ᴿ1 = append xs O
 
 -- Nat-Binary conversions
-toBinary : (d n : ℕ) → Binary n
-toBinary 0 n = zeroᴮ n
-toBinary (suc d) n = inc (toBinary d n)
+ℕ⇒Binary : (d n : ℕ) → Binary n
+ℕ⇒Binary 0 n = zeroᴮ n
+ℕ⇒Binary (suc d) n = inc (ℕ⇒Binary d n)
 
-fromBinary : ∀ {n} → Binary n → ℕ
-fromBinary []       = 0
-fromBinary (x ∷ xs) with x
-...                 | O = 2 * fromBinary xs
-...                 | I = 1 + 2 * fromBinary xs
+Binary⇒ℕ : ∀ {n} → Binary n → ℕ
+Binary⇒ℕ []       = 0
+Binary⇒ℕ (x ∷ xs) with x
+...               | O = 2 * Binary⇒ℕ xs
+...               | I = 1 + 2 * Binary⇒ℕ xs
