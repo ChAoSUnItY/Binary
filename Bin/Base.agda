@@ -2,16 +2,31 @@ module Bin.Base where
 
 open import Relation.Nullary.Decidable using (⌊_⌋; yes; no)
 open import Data.Nat using (ℕ; zero; suc; _+_; _*_)
-open import Data.Bool using (Bool; true; false; not)
+open import Data.Bool using (Bool; true; false; _∨_; _∧_)
+                      renaming (not to notᵇ; _xor_ to _xorᵇ_)
 open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
+open import Data.Product using (_×_)
 
-data Bit : Set where
-  O : Bit
-  I : Bit
+pattern I = true
+pattern O = false
 
-negate : Bit → Bit
-negate O = I
-negate I = O
+Bit : Set
+Bit = Bool
+
+not : Bit → Bit
+not x = notᵇ x
+
+infixr 6 _and_
+infixr 5 _or_ _xor_
+
+_or_ : Bit → Bit → Bit
+x or y = x ∨ y
+
+_and_ : Bit → Bit → Bit
+x and y = x ∧ y
+
+_xor_ : Bit → Bit → Bit
+x xor y = x xorᵇ y
 
 -- In this case, we simluate the binary operations
 -- in big endian to best fit Vec's data structure.
@@ -45,8 +60,8 @@ _≠_ : ∀ {n} → Binary n → Binary n → Bool
 xs ≠ ys = not (xs == ys)
 
 flip : ∀ {n} → Binary n → Binary n
-flip [] = []
-flip (x ∷ xs) = negate x ∷ flip xs
+flip []       = []
+flip (x ∷ xs) = not x ∷ flip xs
 
 -- TODO: Maybe don't discard carry?
 -- Adds 2 binary number, may cause overflow
@@ -71,14 +86,29 @@ inc (I ∷ xs) = O ∷ inc xs
 
 -- Decrement by 1
 dec : ∀ {n} → Binary n → Binary n
-dec [] = []
+dec []       = []
 dec (O ∷ xs) = I ∷ dec xs
 dec (I ∷ xs) = O ∷ xs
 
 -- Bitwise negation, which converts binary by two's complement
 ~_ : ∀ {n} → Binary n → Binary n
-~ [] = []
+~ []       = []
 ~ (x ∷ xs) = inc (flip (x ∷ xs))
+
+-- Bitwise and
+_&_ : ∀ {n} → Binary n → Binary n → Binary n
+[] & []             = []
+(x ∷ xs) & (y ∷ ys) = (x and y) ∷ (xs & ys)
+
+-- Bitwise or
+_∥_ : ∀ {n} → Binary n → Binary n → Binary n
+[] ∥ []             = []
+(x ∷ xs) ∥ (y ∷ ys) = (x or y) ∷ (xs ∥ ys)
+
+-- Bitwise exclusive or
+_^_ : ∀ {n} → Binary n → Binary n → Binary n
+[] ^ []             = []
+(x ∷ xs) ^ (y ∷ ys) = (x xor y) ∷ (xs ^ ys)
 
 -- Logical left shift by 1
 _<<ᴸ1 : ∀ {n} → Binary n → Binary n
@@ -90,13 +120,17 @@ _>>ᴿ1 : ∀ {n} → Binary n → Binary n
 []       >>ᴿ1 = []
 (_ ∷ xs) >>ᴿ1 = append xs O
 
+-- ^-swap : ∀ {n} → Binary n × Binary n → 
+
 -- Nat-Binary conversions
 ℕ⇒Binary : (d n : ℕ) → Binary n
-ℕ⇒Binary 0 n = zeroᴮ n
+ℕ⇒Binary 0 n       = zeroᴮ n
 ℕ⇒Binary (suc d) n = inc (ℕ⇒Binary d n)
 
+-- Binary-Nat conversion, binary would be treated as unsigned
 Binary⇒ℕ : ∀ {n} → Binary n → ℕ
 Binary⇒ℕ []       = 0
 Binary⇒ℕ (x ∷ xs) with x
 ...               | O = 2 * Binary⇒ℕ xs
 ...               | I = 1 + 2 * Binary⇒ℕ xs
+ 
