@@ -59,10 +59,6 @@ _==_ : ∀ {n} → Binary n → Binary n → Bool
 _≠_ : ∀ {n} → Binary n → Binary n → Bool
 xs ≠ ys = not (xs == ys)
 
-flip : ∀ {n} → Binary n → Binary n
-flip []       = []
-flip (x ∷ xs) = not x ∷ flip xs
-
 -- TODO: Maybe don't discard carry?
 -- Adds 2 binary number, may cause overflow
 add : ∀ {n} → Binary n → Binary n → Binary n
@@ -90,10 +86,15 @@ dec []       = []
 dec (O ∷ xs) = I ∷ dec xs
 dec (I ∷ xs) = O ∷ xs
 
--- Bitwise negation, which converts binary by two's complement
+-- Bitwise negation
 ~_ : ∀ {n} → Binary n → Binary n
 ~ []       = []
-~ (x ∷ xs) = inc (flip (x ∷ xs))
+~ (x ∷ xs) = not x ∷ ~ xs
+
+-- Negation, which converts binary by two's complement
+-_ : ∀ {n} → Binary n → Binary n
+- []       = []
+- (x ∷ xs) = inc (~ (x ∷ xs))
 
 -- Bitwise and
 _&_ : ∀ {n} → Binary n → Binary n → Binary n
@@ -116,9 +117,9 @@ _<<ᴸ1 : ∀ {n} → Binary n → Binary n
 (x ∷ xs) <<ᴸ1 = O ∷ dropLast (x ∷ xs)
 
 -- Logical right shift by 1
-_>>ᴿ1 : ∀ {n} → Binary n → Binary n
-[]       >>ᴿ1 = []
-(_ ∷ xs) >>ᴿ1 = append xs O
+_>>ᴸ1 : ∀ {n} → Binary n → Binary n
+[]       >>ᴸ1 = []
+(_ ∷ xs) >>ᴸ1 = append xs O
 
 -- ^-swap : ∀ {n} → Binary n × Binary n → 
 
