@@ -1,17 +1,22 @@
 module Bin.Properties where
   
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; cong-app; subst; sym)
+open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
+open import Relation.Nullary.Decidable using
+  (⌊_⌋; True; toWitness; fromWitness; _×-dec_; _⊎-dec_; ¬?)
 open import Data.Nat using (ℕ; zero; suc)
-open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
+open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length; head)
+open import Data.Unit using (tt)
+open import Data.Bool using (_∧_; _∨_; not; _xor_; T)
 open import Data.Bool.Properties using (not-involutive;
-                                        ∨-comm; ∨-assoc;
-                                        ∧-comm; ∧-assoc;
-                                        xor-same; xor-comm; xor-assoc; xor-identityʳ; xor-identityˡ)
+                                        ∨-comm; ∨-assoc; ∨-identityʳ; ∨-zeroʳ;
+                                        ∧-comm; ∧-assoc; ∧-zeroˡ; ∧-zeroʳ; ∧-distribˡ-xor; ∧-identityʳ; ∧-identityˡ;
+                                        true-xor; xor-same; xor-comm; xor-assoc; xor-identityʳ; xor-identityˡ; not-distribʳ-xor)
 open import Data.Product using (_×_)
-open import Bin.Base using (Bit; O; I; not; _and_; _or_; _xor_; 
-                            Binary; zeroᴮ; onesᴮ; inc; dec; -_; ~_; _&_; _∥_; _^_; _<<ᴸ1; _>>ᴸ1)
+open import Bin.Base using (Bit; O; I;
+                            Binary; zeroᴮ; onesᴮ; inc; dec; -_; ~_; _&_; _∥_; _^_; _<<ᴸ1; _>>ᴸ1; _+_; _-_;
+                            rca)
 
 -- n-bit Binary properties 
 -- ~ properties
@@ -70,7 +75,7 @@ negate-involutive (I ∷ xs) = begin
 ∥-comm (x ∷ xs) (y ∷ ys) rewrite ∨-comm x y | ∥-comm xs ys = refl
 
 -- & properties
-and-distrib-and : ∀ (x y z : Bit) → x and (y and z) ≡ (x and y) and (x and z)
+and-distrib-and : ∀ (x y z : Bit) → x ∧ (y ∧ z) ≡ (x ∧ y) ∧ (x ∧ z)
 and-distrib-and O y z = refl
 and-distrib-and I y z = refl
 
@@ -87,6 +92,18 @@ and-distrib-and I y z = refl
 &-distrib-& (x ∷ xs) (y ∷ ys) (z ∷ zs) rewrite and-distrib-and x y z | &-distrib-& xs ys zs = refl
 
 -- ^ properties
+false-xorˡ : (x : Bit) → O xor x ≡ x
+false-xorˡ O = refl
+false-xorˡ I = refl
+
+false-xorʳ : (x : Bit) → x xor O ≡ x
+false-xorʳ O = refl
+false-xorʳ I = refl
+
+true-xorʳ : (x : Bit) → x xor I ≡ not x
+true-xorʳ O = refl
+true-xorʳ I = refl
+
 ^-same : ∀ {n} (xs : Binary n) → xs ^ xs ≡ zeroᴮ n
 ^-same [] = refl
 ^-same (x ∷ xs) rewrite xor-same x | ^-same xs = refl
@@ -117,19 +134,186 @@ and-distrib-and I y z = refl
 
 -- ~-& and ~-∥ properties (De Morgan's Law)
 
-not-distrib-or : ∀ (x y : Bit) → not (x or y) ≡ (not x) and (not y)
-not-distrib-or I y = refl
-not-distrib-or O y = refl
+not-distrib-∨ : ∀ (x y : Bit) → not (x ∨ y) ≡ (not x) ∧ (not y)
+not-distrib-∨ I y = refl
+not-distrib-∨ O y = refl
 
-not-distrib-and : ∀ (x y : Bit) → not (x and y) ≡ (not x) or (not y)
+not-distrib-and : ∀ (x y : Bit) → not (x ∧ y) ≡ (not x) ∨ (not y)
 not-distrib-and I y = refl
 not-distrib-and O y = refl
 
 ~-distrib-∥ : ∀ {n} (xs ys : Binary n) → ~ (xs ∥ ys) ≡ (~ xs) & (~ ys)
 ~-distrib-∥ [] [] = refl
-~-distrib-∥ (x ∷ xs) (y ∷ ys) rewrite not-distrib-or x y | ~-distrib-∥ xs ys = refl
+~-distrib-∥ (x ∷ xs) (y ∷ ys) rewrite not-distrib-∨ x y | ~-distrib-∥ xs ys = refl
 
 ~-distrib-& : ∀ {n} (xs ys : Binary n) → ~ (xs & ys) ≡ (~ xs) ∥ (~ ys)
 ~-distrib-& [] [] = refl
 ~-distrib-& (x ∷ xs) (y ∷ ys) rewrite not-distrib-and x y | ~-distrib-& xs ys = refl
- 
+
+-- add / sub properties
+rca-no-carry : ∀ {n} (x : Bit) (xs : Binary n) (y : Bit) (ys : Binary n) → rca (x ∷ xs) (y ∷ ys) O ≡ (x xor y) ∷ rca xs ys (x ∧ y)
+rca-no-carry O [] O [] = refl
+rca-no-carry x xs y ys = begin
+    rca (x ∷ xs) (y ∷ ys) O ≡⟨⟩
+  (x xor y xor O) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y))) 
+    ≡⟨ cong (λ l → (x xor l) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y)))) (false-xorʳ y) ⟩
+  (x xor y) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y))) 
+    ≡⟨ cong (λ l → (x xor y) ∷ rca xs ys ((x ∧ y) ∨ l)) (∧-zeroˡ (x xor y)) ⟩
+  (x xor y) ∷ rca xs ys ((x ∧ y) ∨ O) 
+    ≡⟨ cong (λ l → (x xor y) ∷ rca xs ys l) (∨-identityʳ (x ∧ y)) ⟩
+  (x xor y) ∷ rca xs ys (x ∧ y) 
+    ∎
+
+add-identityʳ : ∀ {n} (xs : Binary n) → xs + (zeroᴮ n) ≡ xs
+add-identityʳ [] = refl
+add-identityʳ {(suc n)} (x ∷ xs) = begin
+  ((x ∷ xs) + zeroᴮ (suc n))           ≡⟨⟩
+  (rca (x ∷ xs) (O ∷ zeroᴮ n) O)       ≡⟨ rca-no-carry x xs O (zeroᴮ n) ⟩
+  (x xor O) ∷ rca xs (zeroᴮ n) (x ∧ O) ≡⟨ cong (_∷ rca xs (zeroᴮ n) (x ∧ O)) (false-xorʳ x) ⟩
+  x ∷ rca xs (zeroᴮ n) (x ∧ O)         ≡⟨ cong (λ l → x ∷ rca xs (zeroᴮ n) l) (∧-zeroʳ x) ⟩
+  x ∷ rca xs (zeroᴮ n) O               ≡⟨ cong (x ∷_) (add-identityʳ xs) ⟩
+  x ∷ xs                               ∎
+
+add-identityˡ : ∀ {n} (xs : Binary n) → (zeroᴮ n) + xs ≡ xs
+add-identityˡ [] = refl
+add-identityˡ {(suc n)} (x ∷ xs) = begin
+  (zeroᴮ (suc n) + (x ∷ xs))           ≡⟨⟩
+  (rca (O ∷ zeroᴮ n) (x ∷ xs) O)       ≡⟨ rca-no-carry O (zeroᴮ n) x xs ⟩
+  (O xor x) ∷ rca (zeroᴮ n) xs (O ∧ x) ≡⟨ cong (_∷ rca (zeroᴮ n) xs (O ∧ x)) (false-xorˡ x) ⟩
+  x ∷ rca (zeroᴮ n) xs (O ∧ x)         ≡⟨ cong (λ l → x ∷ rca (zeroᴮ n) xs l) (∧-zeroˡ x) ⟩
+  x ∷ rca (zeroᴮ n) xs O               ≡⟨ cong (x ∷_) (add-identityˡ xs) ⟩
+  x ∷ xs                               ∎
+
+rca-lemma¹ : ∀ {n} (xs ys : Binary n) → rca xs (~ ys) I ≡ rca xs (inc (~ ys)) O
+rca-lemma¹ [] [] = refl
+rca-lemma¹ (O ∷ xs) (O ∷ ys) = begin
+    rca (O ∷ xs) (~ (O ∷ ys)) I
+  ≡⟨⟩
+    O ∷ rca xs (~ ys) I
+  ≡⟨ cong (O ∷_) (rca-lemma¹ xs ys) ⟩
+    O ∷ rca xs (inc (~ ys)) O
+  ≡⟨⟩
+    rca (O ∷ xs) (inc (~ (O ∷ ys))) O
+  ∎
+rca-lemma¹ (O ∷ xs) (I ∷ ys) = refl
+rca-lemma¹ (I ∷ xs) (O ∷ ys) = begin
+    rca (I ∷ xs) (~ (O ∷ ys)) I
+  ≡⟨⟩
+    I ∷ rca xs (~ ys) I
+  ≡⟨ cong (I ∷_) (rca-lemma¹ xs ys) ⟩
+    I ∷ rca xs (inc (~ ys)) O
+  ≡⟨⟩
+    rca (I ∷ xs) (inc (~ (O ∷ ys))) O
+  ∎
+rca-lemma¹ (I ∷ xs) (I ∷ ys) = refl
+
+rca-lemma² : ∀ {n} (xs ys : Binary n) → rca (rca xs (~ ys) O) ys I ≡ rca (rca xs (~ ys) I) ys O
+rca-lemma² [] [] = refl
+rca-lemma² (O ∷ xs) (O ∷ ys) = begin
+    rca (rca (O ∷ xs) (~ (O ∷ ys)) O) (O ∷ ys) I
+  ≡⟨⟩
+    O ∷ rca (rca xs (~ ys) O) ys I
+  ≡⟨ cong (O ∷_) (rca-lemma² xs ys) ⟩
+    O ∷ rca (rca xs (~ ys) I) ys O
+  ≡⟨⟩
+    rca (rca (O ∷ xs) (~ (O ∷ ys)) I) (O ∷ ys) O
+  ∎
+rca-lemma² (O ∷ xs) (I ∷ ys) = refl
+rca-lemma² (I ∷ xs) (O ∷ ys) = refl
+rca-lemma² (I ∷ xs) (I ∷ ys) = begin
+    rca (rca (I ∷ xs) (~ (I ∷ ys)) O) (I ∷ ys) I
+  ≡⟨⟩
+    I ∷ (rca (rca xs (~ ys) O) ys I)
+  ≡⟨ cong (I ∷_) (rca-lemma² xs ys) ⟩
+    I ∷ rca (rca xs (~ ys) I) ys O
+  ≡⟨⟩
+    rca (rca (I ∷ xs) (~ (I ∷ ys)) I) (I ∷ ys) O
+  ∎
+
+add-sub-involutive : ∀ {n} (xs ys : Binary n) → (xs - ys) + ys ≡ xs
+add-sub-involutive [] [] = refl
+add-sub-involutive (x ∷ xs) (O ∷ ys) = 
+  begin
+    (((x ∷ xs) - (O ∷ ys)) + (O ∷ ys)) 
+  ≡⟨⟩
+    rca (rca (x ∷ xs) (inc (I ∷ (~ ys))) O) (O ∷ ys) O
+  ≡⟨⟩
+    rca (rca (x ∷ xs) (O ∷ inc (~ ys)) O) (O ∷ ys) O
+  ≡⟨ cong (λ l → rca l (O ∷ ys) O) (rca-no-carry x xs O (inc (~ ys))) ⟩
+    rca ((x xor O) ∷ rca xs (inc (~ ys)) (x ∧ O)) (O ∷ ys) O
+  ≡⟨ cong (λ l → rca (l ∷ rca xs (inc (~ ys)) (x ∧ O)) (O ∷ ys) O) (false-xorʳ x) ⟩
+    rca (x ∷ rca xs (inc (~ ys)) (x ∧ O)) (O ∷ ys) O
+  ≡⟨ cong (λ l → rca (x ∷ rca xs (inc (~ ys)) l) (O ∷ ys) O) (∧-zeroʳ x) ⟩
+    rca (x ∷ rca xs (inc (~ ys)) O) (O ∷ ys) O
+  ≡⟨ cong (λ l → rca (x ∷ rca xs l O) (O ∷ ys) O) (negate≡inc-~ ys) ⟩
+    rca (x ∷ rca xs (- ys) O) (O ∷ ys) O 
+  ≡⟨ rca-no-carry x (rca xs (- ys) O) O ys ⟩
+    (x xor O) ∷ rca (rca xs (- ys) O) ys (x ∧ O)
+  ≡⟨ cong (_∷ rca (rca xs (- ys) O) ys (x ∧ O)) (false-xorʳ x) ⟩
+    x ∷ rca (rca xs (- ys) O) ys (x ∧ O)
+  ≡⟨ cong (λ l → x ∷ rca (rca xs (- ys) O) ys l) (∧-zeroʳ x) ⟩
+    x ∷ rca (rca xs (- ys) O) ys O
+  ≡⟨ cong (x ∷_) (add-sub-involutive xs ys) ⟩
+    x ∷ xs
+  ∎
+add-sub-involutive (O ∷ xs) (I ∷ ys) = 
+  begin
+    (((O ∷ xs) - (I ∷ ys)) + (I ∷ ys)) 
+  ≡⟨⟩
+    rca (rca (O ∷ xs) (inc (O ∷ (~ ys))) O) (I ∷ ys) O
+  ≡⟨⟩
+    rca (rca (O ∷ xs) (I ∷ (~ ys)) O) (I ∷ ys) O
+  ≡⟨ cong (λ l → rca l (I ∷ ys) O) (rca-no-carry O xs I (~ ys)) ⟩
+    rca ((O xor I) ∷ rca xs (~ ys) (O ∧ I)) (I ∷ ys) O
+  ≡⟨ cong (λ l → rca (l ∷ rca xs (~ ys) (O ∧ I)) (I ∷ ys) O) (true-xorʳ O) ⟩
+    rca (not O ∷ rca xs (~ ys) (O ∧ I)) (I ∷ ys) O
+  ≡⟨ cong (λ l → rca (not O ∷ rca xs (~ ys) l) (I ∷ ys) O) (∧-identityʳ O) ⟩
+    rca (not O ∷ rca xs (~ ys) O) (I ∷ ys) O
+  ≡⟨ rca-no-carry (not O) (rca xs (~ ys) O) I ys ⟩
+    (not O xor I) ∷ rca (rca xs (~ ys) O) ys (not O ∧ I)
+  ≡⟨ cong (_∷ rca (rca xs (~ ys) O) ys (not O ∧ I)) (true-xorʳ (not O)) ⟩
+    (not (not O)) ∷ rca (rca xs (~ ys) O) ys (not O ∧ I)
+  ≡⟨ cong (_∷ rca (rca xs (~ ys) O) ys (not O ∧ I)) (not-involutive O) ⟩
+    O ∷ rca (rca xs (~ ys) O) ys (not O ∧ I)
+  ≡⟨ cong (λ l → O ∷ rca (rca xs (~ ys) O) ys l) (∧-identityʳ (not O)) ⟩
+    O ∷ rca (rca xs (~ ys) O) ys (not O)
+  ≡⟨⟩
+    O ∷ rca (rca xs (~ ys) O) ys I
+  ≡⟨ cong (O ∷_) (rca-lemma² xs ys) ⟩
+    O ∷ rca (rca xs (~ ys) I) ys O
+  ≡⟨ cong (λ l → O ∷ rca l ys O) (rca-lemma¹ xs ys) ⟩
+    O ∷ rca (rca xs (inc (~ ys)) O) ys O
+  ≡⟨ cong (λ l → O ∷ rca (rca xs l O) ys O) (negate≡inc-~ ys) ⟩
+    O ∷ rca (rca xs (- ys) O) ys O
+  ≡⟨ cong (O ∷_) (add-sub-involutive xs ys) ⟩
+    O ∷ xs
+  ∎
+add-sub-involutive (I ∷ xs) (I ∷ ys) = 
+  begin
+    (((I ∷ xs) - (I ∷ ys)) + (I ∷ ys)) 
+  ≡⟨⟩
+    rca (rca (I ∷ xs) (inc (O ∷ (~ ys))) O) (I ∷ ys) O
+  ≡⟨⟩
+    rca (rca (I ∷ xs) (I ∷ (~ ys)) O) (I ∷ ys) O
+  ≡⟨ cong (λ l → rca l (I ∷ ys) O) (rca-no-carry I xs I (~ ys)) ⟩
+    rca ((I xor I) ∷ rca xs (~ ys) (I ∧ I)) (I ∷ ys) O
+  ≡⟨ cong (λ l → rca (l ∷ rca xs (~ ys) (I ∧ I)) (I ∷ ys) O) (true-xorʳ I) ⟩
+    rca (not I ∷ rca xs (~ ys) (I ∧ I)) (I ∷ ys) O
+  ≡⟨ cong (λ l → rca (not I ∷ rca xs (~ ys) l) (I ∷ ys) O) (∧-identityʳ I) ⟩
+    rca (not I ∷ rca xs (~ ys) I) (I ∷ ys) O
+  ≡⟨ rca-no-carry (not I) (rca xs (~ ys) I) I ys ⟩
+    (not I xor I) ∷ rca (rca xs (~ ys) I) ys (not I ∧ I)
+  ≡⟨ cong (_∷ rca (rca xs (~ ys) I) ys (not I ∧ I)) (true-xorʳ (not I)) ⟩
+    (not (not I)) ∷ rca (rca xs (~ ys) I) ys (not I ∧ I)
+  ≡⟨ cong (_∷ rca (rca xs (~ ys) I) ys (not I ∧ I)) (not-involutive I) ⟩
+    I ∷ rca (rca xs (~ ys) I) ys (not I ∧ I)
+  ≡⟨ cong (λ l → I ∷ rca (rca xs (~ ys) I) ys l) (∧-identityʳ (not I)) ⟩
+    I ∷ rca (rca xs (~ ys) I) ys O
+  ≡⟨ cong (λ l → I ∷ rca l ys O) (rca-lemma¹ xs ys) ⟩
+    I ∷ rca (rca xs (inc (~ ys)) O) ys O
+  ≡⟨ cong (λ l → I ∷ rca (rca xs l O) ys O) (negate≡inc-~ ys) ⟩
+    I ∷ rca (rca xs (- ys) O) ys O
+  ≡⟨ cong (I ∷_) (add-sub-involutive xs ys) ⟩
+    I ∷ xs
+  ∎
+   
