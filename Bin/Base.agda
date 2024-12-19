@@ -1,9 +1,9 @@
 module Bin.Base where
 
 open import Relation.Nullary.Decidable using (⌊_⌋; yes; no)
-open import Data.Nat using (ℕ; zero; suc; _+_; _*_)
-open import Data.Bool using (Bool; true; false; _∨_; _∧_)
-                      renaming (not to notᵇ; _xor_ to _xorᵇ_)
+open import Data.Nat using (ℕ; zero; suc)
+                     renaming (_+_ to _+ℕ_; _*_ to _*ℕ_)
+open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
 open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
 open import Data.Product using (_×_)
 
@@ -12,21 +12,6 @@ pattern O = false
 
 Bit : Set
 Bit = Bool
-
-not : Bit → Bit
-not x = notᵇ x
-
-infixr 6 _and_
-infixr 5 _or_ _xor_
-
-_or_ : Bit → Bit → Bit
-x or y = x ∨ y
-
-_and_ : Bit → Bit → Bit
-x and y = x ∧ y
-
-_xor_ : Bit → Bit → Bit
-x xor y = x xorᵇ y
 
 -- In this case, we simluate the binary operations
 -- in big endian to best fit Vec's data structure.
@@ -59,21 +44,6 @@ _==_ : ∀ {n} → Binary n → Binary n → Bool
 _≠_ : ∀ {n} → Binary n → Binary n → Bool
 xs ≠ ys = not (xs == ys)
 
--- TODO: Maybe don't discard carry?
--- Adds 2 binary number, may cause overflow
-add : ∀ {n} → Binary n → Binary n → Binary n
-add xs ys = add' xs ys O
-  where
-    add' : ∀ {n} → Binary n → Binary n → Bit → Binary n
-    add' []       []       _     = []
-    add' (x ∷ xs) (y ∷ ys) carry with x | y | carry
-    ...                          | O | O | O = O ∷ add' xs ys O
-    ...                          | O | O | I = I ∷ add' xs ys O
-    ...                          | I | I | O = O ∷ add' xs ys I
-    ...                          | I | I | I = I ∷ add' xs ys I
-    ...                          | _ | _ | O = I ∷ add' xs ys O
-    ...                          | _ | _ | I = O ∷ add' xs ys I
-
 -- Increment by 1
 inc : ∀ {n} → Binary n → Binary n
 inc []       = []
@@ -99,12 +69,12 @@ dec (I ∷ xs) = O ∷ xs
 -- Bitwise and
 _&_ : ∀ {n} → Binary n → Binary n → Binary n
 [] & []             = []
-(x ∷ xs) & (y ∷ ys) = (x and y) ∷ (xs & ys)
+(x ∷ xs) & (y ∷ ys) = (x ∧ y) ∷ (xs & ys)
 
 -- Bitwise or
 _∥_ : ∀ {n} → Binary n → Binary n → Binary n
 [] ∥ []             = []
-(x ∷ xs) ∥ (y ∷ ys) = (x or y) ∷ (xs ∥ ys)
+(x ∷ xs) ∥ (y ∷ ys) = (x ∨ y) ∷ (xs ∥ ys)
 
 -- Bitwise exclusive or
 _^_ : ∀ {n} → Binary n → Binary n → Binary n
@@ -121,6 +91,25 @@ _>>ᴸ1 : ∀ {n} → Binary n → Binary n
 []       >>ᴸ1 = []
 (_ ∷ xs) >>ᴸ1 = append xs O
 
+-- Ripple carry add simulation
+rca : ∀ {n} → Binary n → Binary n → Bit → Binary n
+rca []       []       _     = []
+rca (x ∷ xs) (y ∷ ys) carry = (x xor y xor carry) ∷ rca xs ys ((x ∧ y) ∨ (carry ∧ (x xor y)))
+
+-- TODO: Maybe don't discard carry?
+-- Adds 2 binary number, may cause overflow
+add : ∀ {n} → Binary n → Binary n → Binary n
+add xs ys = rca xs ys O
+
+_+_ : ∀ {n} → Binary n → Binary n → Binary n
+xs + ys = add xs ys
+
+sub : ∀ {n} → Binary n → Binary n → Binary n
+sub xs ys = add xs (- ys)
+
+_-_ : ∀ {n} → Binary n → Binary n → Binary n
+xs - ys = sub xs ys
+
 -- ^-swap : ∀ {n} → Binary n × Binary n → 
 
 -- Nat-Binary conversions
@@ -132,6 +121,6 @@ _>>ᴸ1 : ∀ {n} → Binary n → Binary n
 Binary⇒ℕ : ∀ {n} → Binary n → ℕ
 Binary⇒ℕ []       = 0
 Binary⇒ℕ (x ∷ xs) with x
-...               | O = 2 * Binary⇒ℕ xs
-...               | I = 1 + 2 * Binary⇒ℕ xs
- 
+...               | O = 2 *ℕ Binary⇒ℕ xs
+...               | I = 1 +ℕ 2 *ℕ Binary⇒ℕ xs
+  
