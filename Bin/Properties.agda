@@ -180,28 +180,19 @@ add-identityˡ {(suc n)} (x ∷ xs) = begin
   x ∷ rca (zeroᴮ n) xs O               ≡⟨ cong (x ∷_) (add-identityˡ xs) ⟩
   x ∷ xs                               ∎
 
-rca-lemma¹ : ∀ {n} (xs ys : Binary n) → rca xs (~ ys) I ≡ rca xs (inc (~ ys)) O
-rca-lemma¹ [] [] = refl
-rca-lemma¹ (O ∷ xs) (O ∷ ys) = begin
-    rca (O ∷ xs) (~ (O ∷ ys)) I
-  ≡⟨⟩
-    O ∷ rca xs (~ ys) I
-  ≡⟨ cong (O ∷_) (rca-lemma¹ xs ys) ⟩
-    O ∷ rca xs (inc (~ ys)) O
-  ≡⟨⟩
-    rca (O ∷ xs) (inc (~ (O ∷ ys))) O
-  ∎
-rca-lemma¹ (O ∷ xs) (I ∷ ys) = refl
-rca-lemma¹ (I ∷ xs) (O ∷ ys) = begin
-    rca (I ∷ xs) (~ (O ∷ ys)) I
-  ≡⟨⟩
-    I ∷ rca xs (~ ys) I
-  ≡⟨ cong (I ∷_) (rca-lemma¹ xs ys) ⟩
-    I ∷ rca xs (inc (~ ys)) O
-  ≡⟨⟩
-    rca (I ∷ xs) (inc (~ (O ∷ ys))) O
-  ∎
-rca-lemma¹ (I ∷ xs) (I ∷ ys) = refl
+rca-carry≡rca-incˡ : ∀ {n} (xs ys : Binary n) → rca xs ys I ≡ rca (inc xs) ys O
+rca-carry≡rca-incˡ [] [] = refl
+rca-carry≡rca-incˡ (O ∷ xs) (O ∷ ys) = refl
+rca-carry≡rca-incˡ (O ∷ xs) (I ∷ ys) = refl
+rca-carry≡rca-incˡ (I ∷ xs) (O ∷ ys) rewrite rca-carry≡rca-incˡ xs ys = refl
+rca-carry≡rca-incˡ (I ∷ xs) (I ∷ ys) rewrite rca-carry≡rca-incˡ xs ys = refl
+
+rca-carry≡rca-incʳ : ∀ {n} (xs ys : Binary n) → rca xs ys I ≡ rca xs (inc ys) O
+rca-carry≡rca-incʳ [] [] = refl
+rca-carry≡rca-incʳ (O ∷ xs) (O ∷ ys) = refl
+rca-carry≡rca-incʳ (I ∷ xs) (O ∷ ys) = refl
+rca-carry≡rca-incʳ (O ∷ xs) (I ∷ ys) rewrite rca-carry≡rca-incʳ xs ys = refl
+rca-carry≡rca-incʳ (I ∷ xs) (I ∷ ys) rewrite rca-carry≡rca-incʳ xs ys = refl
 
 rca-carry-comm : ∀ {n} {inner outer : Bit} (xs ys zs : Binary n) → rca (rca xs ys inner) zs outer ≡ rca (rca xs ys outer) zs inner
 rca-carry-comm [] [] [] = refl
@@ -275,7 +266,7 @@ add-sub-involutive (O ∷ xs) (I ∷ ys) =
     O ∷ rca (rca xs (~ ys) O) ys I
   ≡⟨ cong (O ∷_) (rca-carry-comm xs (~ ys) ys) ⟩
     O ∷ rca (rca xs (~ ys) I) ys O
-  ≡⟨ cong (λ l → O ∷ rca l ys O) (rca-lemma¹ xs ys) ⟩
+  ≡⟨ cong (λ l → O ∷ rca l ys O) (rca-carry≡rca-incʳ xs (~ ys)) ⟩
     O ∷ rca (rca xs (inc (~ ys)) O) ys O
   ≡⟨ cong (λ l → O ∷ rca (rca xs l O) ys O) (negate≡inc-~ ys) ⟩
     O ∷ rca (rca xs (- ys) O) ys O
@@ -303,7 +294,7 @@ add-sub-involutive (I ∷ xs) (I ∷ ys) =
     I ∷ rca (rca xs (~ ys) I) ys (not I ∧ I)
   ≡⟨ cong (λ l → I ∷ rca (rca xs (~ ys) I) ys l) (∧-identityʳ (not I)) ⟩
     I ∷ rca (rca xs (~ ys) I) ys O
-  ≡⟨ cong (λ l → I ∷ rca l ys O) (rca-lemma¹ xs ys) ⟩
+  ≡⟨ cong (λ l → I ∷ rca l ys O) (rca-carry≡rca-incʳ xs (~ ys)) ⟩
     I ∷ rca (rca xs (inc (~ ys)) O) ys O
   ≡⟨ cong (λ l → I ∷ rca (rca xs l O) ys O) (negate≡inc-~ ys) ⟩
     I ∷ rca (rca xs (- ys) O) ys O
