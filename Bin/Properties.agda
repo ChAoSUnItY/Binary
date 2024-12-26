@@ -180,6 +180,17 @@ add-identityˡ {(suc n)} (x ∷ xs) = begin
   x ∷ rca (zeroᴮ n) xs O               ≡⟨ cong (x ∷_) (add-identityˡ xs) ⟩
   x ∷ xs                               ∎
 
+rca-comm : ∀ {n} {carry : Bit} (xs ys : Binary n) → rca xs ys carry ≡ rca ys xs carry
+rca-comm [] [] = refl
+rca-comm {suc n} {O} (O ∷ xs) (O ∷ ys) rewrite rca-comm {n} {O} xs ys = refl
+rca-comm {suc n} {O} (O ∷ xs) (I ∷ ys) rewrite rca-comm {n} {O} xs ys = refl
+rca-comm {suc n} {O} (I ∷ xs) (O ∷ ys) rewrite rca-comm {n} {O} xs ys = refl
+rca-comm {suc n} {O} (I ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
+rca-comm {suc n} {I} (O ∷ xs) (O ∷ ys) rewrite rca-comm {n} {O} xs ys = refl
+rca-comm {suc n} {I} (O ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
+rca-comm {suc n} {I} (I ∷ xs) (O ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
+rca-comm {suc n} {I} (I ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
+
 rca-carry≡rca-incˡ : ∀ {n} (xs ys : Binary n) → rca xs ys I ≡ rca (inc xs) ys O
 rca-carry≡rca-incˡ [] [] = refl
 rca-carry≡rca-incˡ (O ∷ xs) (O ∷ ys) = refl
@@ -301,4 +312,4 @@ add-sub-involutive (I ∷ xs) (I ∷ ys) =
   ≡⟨ cong (I ∷_) (add-sub-involutive xs ys) ⟩
     I ∷ xs
   ∎ 
-     
+      
