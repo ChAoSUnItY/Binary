@@ -15,6 +15,10 @@ open import Bin.Base using (Bit; O; I;
                             rca)
 open import Bin.Properties
 
+-- This is a good example about generalized case proofing sometimes will fail.c
+-- But remark that although it seems impossible by looking into the given
+-- condition where induction is required, it's still possible after case splitted.
+-- 
 -- add-assocˡ (x ∷ xs) (y ∷ ys) (z ∷ zs) = begin
 --     (((x ∷ xs) + (y ∷ ys)) + (z ∷ zs))
 --   ≡⟨⟩

@@ -173,6 +173,9 @@ rca-comm {suc n} {I} (O ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
 rca-comm {suc n} {I} (I ∷ xs) (O ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
 rca-comm {suc n} {I} (I ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
 
+add-comm : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ys + xs
+add-comm {n} xs ys rewrite rca-comm {n} {O} xs ys = refl
+
 add-identityˡ : ∀ {n} (xs : Binary n) → (zeroᴮ n) + xs ≡ xs
 add-identityˡ [] = refl
 add-identityˡ {(suc n)} (x ∷ xs) = begin
