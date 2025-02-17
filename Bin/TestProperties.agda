@@ -10,12 +10,10 @@ open import Data.Bool.Properties using (not-involutive;
                                         ∨-comm; ∨-assoc; ∨-identityʳ; ∨-zeroʳ;
                                         ∧-comm; ∧-assoc; ∧-zeroˡ; ∧-zeroʳ; ∧-distribʳ-xor; ∧-identityʳ; ∧-identityˡ;
                                         true-xor; xor-same; xor-comm; xor-assoc; xor-identityʳ; xor-identityˡ; ∧-distribˡ-xor; not-distribʳ-xor)
-open import Bin.Base using (Bit; O; I;
-                            Binary; zeroᴮ; onesᴮ; inc; dec; -_; ~_; _&_; _∥_; _^_; _<<ᴸ1; _>>ᴸ1; _+_; _-_;
-                            rca)
+open import Bin.Base
 open import Bin.Properties
 
--- This is a good example about generalized case proofing sometimes will fail.c
+-- This is a good example about generalized case proofing sometimes will fail.
 -- But remark that although it seems impossible by looking into the given
 -- condition where induction is required, it's still possible after case splitted.
 -- 

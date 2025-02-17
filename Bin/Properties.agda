@@ -10,19 +10,26 @@ open import Data.Bool.Properties using (not-involutive;
                                         ∨-comm; ∨-assoc; ∨-identityʳ; ∨-zeroʳ;
                                         ∧-comm; ∧-assoc; ∧-zeroˡ; ∧-zeroʳ; ∧-distribʳ-xor; ∧-identityʳ; ∧-identityˡ;
                                         true-xor; xor-same; xor-comm; xor-assoc; xor-identityʳ; xor-identityˡ; ∧-distribˡ-xor; not-distribʳ-xor)
-open import Bin.Base using (Bit; O; I;
-                            Binary; zeroᴮ; onesᴮ; inc; dec; -_; ~_; _&_; _∥_; _^_; _<<ᴸ1; _>>ᴸ1; _+_; _-_;
-                            rca)
+open import Data.Product using (uncurry; _,_; _×_; proj₁)
+open import Bin.Base
 
 -- n-bit Binary properties 
 -- ~ properties
 ~-onesᴮ≡zeroᴮ : ∀ {n} → ~ onesᴮ n ≡ zeroᴮ n
 ~-onesᴮ≡zeroᴮ {zero} = refl
-~-onesᴮ≡zeroᴮ {(suc n)} = begin
+~-onesᴮ≡zeroᴮ {suc n} = begin
   ~ onesᴮ (suc n) ≡⟨⟩
   O ∷ (~ onesᴮ n) ≡⟨ cong (O ∷_) ~-onesᴮ≡zeroᴮ ⟩
   O ∷ (zeroᴮ n)   ≡⟨⟩
   zeroᴮ (suc n)   ∎
+
+~-zeroᴮ≡onesᴮ : ∀ {n} → ~ zeroᴮ n ≡ onesᴮ n
+~-zeroᴮ≡onesᴮ {zero} = refl
+~-zeroᴮ≡onesᴮ {suc n} = begin
+  ~ zeroᴮ (suc n) ≡⟨⟩
+  I ∷ (~ zeroᴮ n) ≡⟨ cong (I ∷_) ~-zeroᴮ≡onesᴮ ⟩
+  I ∷ (onesᴮ n)   ≡⟨⟩
+  onesᴮ (suc n)   ∎
 
 ~-involutive : ∀ {n} (xs : Binary n) → ~ (~ xs) ≡ xs
 ~-involutive [] = refl
@@ -31,10 +38,27 @@ open import Bin.Base using (Bit; O; I;
 -- inc properties
 
 -- inc dec properties
+inc-onesᴮ≡zeroᴮ : ∀ {n} → inc (onesᴮ n) ≡ zeroᴮ n
+inc-onesᴮ≡zeroᴮ {zero} = refl
+inc-onesᴮ≡zeroᴮ {suc n} = begin
+    inc (onesᴮ (suc n))
+  ≡⟨⟩
+    inc (I ∷ onesᴮ n)
+  ≡⟨⟩
+    O ∷ inc (onesᴮ n)
+  ≡⟨ cong (O ∷_) inc-onesᴮ≡zeroᴮ ⟩
+    zeroᴮ (suc n)
+  ∎
+
 inc-dec-involutive : ∀ {n} (xs : Binary n) → dec (inc xs) ≡ xs
 inc-dec-involutive [] = refl
 inc-dec-involutive (O ∷ xs) = refl 
 inc-dec-involutive (I ∷ xs) rewrite inc-dec-involutive xs = refl
+
+inc-dec-involutive′ : ∀ {n} (xs : Binary n) → inc (dec xs) ≡ xs
+inc-dec-involutive′ [] = refl
+inc-dec-involutive′ (O ∷ xs) rewrite inc-dec-involutive′ xs = refl
+inc-dec-involutive′ (I ∷ xs) = refl
 
 -- TODO: Complete this proof by prove injective and surjective of -
 -- 2's complement properties
@@ -173,22 +197,6 @@ rca-comm {suc n} {I} (O ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
 rca-comm {suc n} {I} (I ∷ xs) (O ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
 rca-comm {suc n} {I} (I ∷ xs) (I ∷ ys) rewrite rca-comm {n} {I} xs ys = refl
 
-add-comm : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ys + xs
-add-comm {n} xs ys rewrite rca-comm {n} {O} xs ys = refl
-
-add-identityˡ : ∀ {n} (xs : Binary n) → (zeroᴮ n) + xs ≡ xs
-add-identityˡ [] = refl
-add-identityˡ {(suc n)} (x ∷ xs) = begin
-  (zeroᴮ (suc n) + (x ∷ xs))           ≡⟨⟩
-  (rca (O ∷ zeroᴮ n) (x ∷ xs) O)       ≡⟨ rca-no-carry O (zeroᴮ n) x xs ⟩
-  (O xor x) ∷ rca (zeroᴮ n) xs (O ∧ x) ≡⟨ cong (_∷ rca (zeroᴮ n) xs (O ∧ x)) (false-xorˡ x) ⟩
-  x ∷ rca (zeroᴮ n) xs (O ∧ x)         ≡⟨ cong (λ l → x ∷ rca (zeroᴮ n) xs l) (∧-zeroˡ x) ⟩
-  x ∷ rca (zeroᴮ n) xs O               ≡⟨ cong (x ∷_) (add-identityˡ xs) ⟩
-  x ∷ xs                               ∎
-
-add-identityʳ : ∀ {n} (xs : Binary n) → xs + (zeroᴮ n) ≡ xs
-add-identityʳ {n} xs rewrite rca-comm {n} {O} xs (zeroᴮ n) | add-identityˡ xs = refl
-
 rca-carry≡rca-incˡ : ∀ {n} (xs ys : Binary n) → rca xs ys I ≡ rca (inc xs) ys O
 rca-carry≡rca-incˡ [] [] = refl
 rca-carry≡rca-incˡ (O ∷ xs) (O ∷ ys) = refl
@@ -249,6 +257,24 @@ rca-carry-comm {suc n} {I} {O} (I ∷ xs) (O ∷ ys) (O ∷ zs) rewrite rca-carr
 rca-carry-comm {suc n} {I} {O} (I ∷ xs) (O ∷ ys) (I ∷ zs) rewrite rca-carry-comm {n} {I} {O} xs ys zs = refl
 rca-carry-comm {suc n} {I} {O} (I ∷ xs) (I ∷ ys) (O ∷ zs) = refl
 rca-carry-comm {suc n} {I} {O} (I ∷ xs) (I ∷ ys) (I ∷ zs) = refl
+
+-- n-bit binary addition properties
+
+add-comm : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ys + xs
+add-comm {n} xs ys rewrite rca-comm {n} {O} xs ys = refl
+
+add-identityˡ : ∀ {n} (xs : Binary n) → (zeroᴮ n) + xs ≡ xs
+add-identityˡ [] = refl
+add-identityˡ {(suc n)} (x ∷ xs) = begin
+  (zeroᴮ (suc n) + (x ∷ xs))           ≡⟨⟩
+  (rca (O ∷ zeroᴮ n) (x ∷ xs) O)       ≡⟨ rca-no-carry O (zeroᴮ n) x xs ⟩
+  (O xor x) ∷ rca (zeroᴮ n) xs (O ∧ x) ≡⟨ cong (_∷ rca (zeroᴮ n) xs (O ∧ x)) (false-xorˡ x) ⟩
+  x ∷ rca (zeroᴮ n) xs (O ∧ x)         ≡⟨ cong (λ l → x ∷ rca (zeroᴮ n) xs l) (∧-zeroˡ x) ⟩
+  x ∷ rca (zeroᴮ n) xs O               ≡⟨ cong (x ∷_) (add-identityˡ xs) ⟩
+  x ∷ xs                               ∎
+
+add-identityʳ : ∀ {n} (xs : Binary n) → xs + (zeroᴮ n) ≡ xs
+add-identityʳ {n} xs rewrite rca-comm {n} {O} xs (zeroᴮ n) | add-identityˡ xs = refl
 
 add-assocˡ : ∀ {n} (xs ys zs : Binary n) → (xs + ys) + zs ≡ xs + (ys + zs)
 add-assocˡ [] [] [] = refl
@@ -352,15 +378,122 @@ add-assocˡ (I ∷ xs) (I ∷ ys) (I ∷ zs) = begin
 add-assocʳ : ∀ {n} (xs ys zs : Binary n) → xs + (ys + zs) ≡ (xs + ys) + zs
 add-assocʳ {n} xs ys zs rewrite sym (add-assocˡ xs ys zs) = refl
 
-b-b≡zeroᵇ : ∀ {n} (xs : Binary n) → xs - xs ≡ zeroᴮ n
-b-b≡zeroᵇ [] = refl
-b-b≡zeroᵇ {suc n} (O ∷ xs) rewrite negate≡inc-~ xs | b-b≡zeroᵇ xs = refl
-b-b≡zeroᵇ {suc n} (I ∷ xs) rewrite rca-carry≡rca-incʳ xs (~ xs) | negate≡inc-~ xs | b-b≡zeroᵇ xs = refl
+b-b≡zeroᴮ : ∀ {n} (xs : Binary n) → xs - xs ≡ zeroᴮ n
+b-b≡zeroᴮ [] = refl
+b-b≡zeroᴮ {suc n} (O ∷ xs) rewrite negate≡inc-~ xs | b-b≡zeroᴮ xs = refl
+b-b≡zeroᴮ {suc n} (I ∷ xs) rewrite rca-carry≡rca-incʳ xs (~ xs) | negate≡inc-~ xs | b-b≡zeroᴮ xs = refl
+
+b+zeroᴮ≡b : ∀ {n} (xs : Binary n) → xs + zeroᴮ n ≡ xs
+b+zeroᴮ≡b [] = refl
+b+zeroᴮ≡b {suc n} (O ∷ xs) rewrite b+zeroᴮ≡b xs = refl
+b+zeroᴮ≡b {suc n} (I ∷ xs) rewrite b+zeroᴮ≡b xs = refl
+
+b-zeroᴮ≡b : ∀ {n} (xs : Binary n) → xs - zeroᴮ n ≡ xs
+b-zeroᴮ≡b [] = refl
+b-zeroᴮ≡b {suc n} (O ∷ xs) rewrite negate≡inc-~ (zeroᴮ n) | b-zeroᴮ≡b xs = refl
+b-zeroᴮ≡b {suc n} (I ∷ xs) rewrite negate≡inc-~ (zeroᴮ n) | b-zeroᴮ≡b xs = refl
+
+inc-b≡b+oneᴮ : ∀ {n} (xs : Binary n) → inc xs ≡ xs + oneᴮ n
+inc-b≡b+oneᴮ [] = refl
+inc-b≡b+oneᴮ {suc n} (O ∷ xs) = begin
+    inc (O ∷ xs)
+  ≡⟨⟩
+    I ∷ xs
+  ≡⟨ cong (I ∷_) (sym (b+zeroᴮ≡b xs)) ⟩
+    I ∷ rca xs (zeroᴮ n) O
+  ≡⟨⟩
+    (O ∷ xs) + oneᴮ (suc n)
+  ∎
+inc-b≡b+oneᴮ {suc n} (I ∷ xs) = begin
+    inc (I ∷ xs)
+  ≡⟨⟩
+    O ∷ inc xs
+  ≡⟨ cong (λ l → O ∷ inc l) (sym (b+zeroᴮ≡b xs)) ⟩
+    O ∷ inc (xs + zeroᴮ n)
+  ≡⟨ cong (O ∷_) (sym (rca-lift-carry xs (zeroᴮ n))) ⟩
+    O ∷ rca xs (zeroᴮ n) I
+  ≡⟨⟩
+    (I ∷ xs) + oneᴮ (suc n)
+  ∎
+
+add-onesᴮ≡dec : ∀ {n} (xs : Binary n) → rca xs (onesᴮ n) O ≡ dec xs
+add-onesᴮ≡dec [] = refl
+add-onesᴮ≡dec {suc n} (O ∷ xs) = begin
+    rca (O ∷ xs) (onesᴮ (suc n)) O
+  ≡⟨⟩
+    I ∷ rca xs (onesᴮ n) O
+  ≡⟨ cong (I ∷_) (add-onesᴮ≡dec xs) ⟩
+    I ∷ dec xs
+  ≡⟨⟩
+    dec (O ∷ xs)
+  ∎
+add-onesᴮ≡dec {suc n} (I ∷ xs) = begin
+    rca (I ∷ xs) (onesᴮ (suc n)) O
+  ≡⟨⟩
+    O ∷ rca xs (onesᴮ n) I
+  ≡⟨ cong (O ∷_) (rca-lift-carry xs (onesᴮ n)) ⟩
+    O ∷ inc (rca xs (onesᴮ n) O)
+  ≡⟨ cong (λ l → O ∷ inc l) (add-onesᴮ≡dec xs) ⟩
+    O ∷ inc (dec xs)
+  ≡⟨ cong (O ∷_) (inc-dec-involutive′ xs) ⟩
+    O ∷ xs
+  ≡⟨⟩
+    dec (I ∷ xs)
+  ∎
+
+b-oneᴮ≡dec : ∀ {n} (xs : Binary n) → xs - (oneᴮ n) ≡ dec xs
+b-oneᴮ≡dec [] = refl
+b-oneᴮ≡dec {suc n} (O ∷ xs) = begin
+    (O ∷ xs) - oneᴮ (suc n)
+  ≡⟨⟩
+    rca (O ∷ xs) (I ∷ (~ zeroᴮ n)) O
+  ≡⟨⟩
+    I ∷ rca xs (~ zeroᴮ n) O
+  ≡⟨ cong (λ l → I ∷ rca xs l O) ~-zeroᴮ≡onesᴮ ⟩
+    I ∷ rca xs (onesᴮ n) O
+  ≡⟨ cong (I ∷_) (add-onesᴮ≡dec xs) ⟩
+    I ∷ dec xs
+  ≡⟨⟩
+    dec (O ∷ xs)
+  ∎
+b-oneᴮ≡dec {suc n} (I ∷ xs) = begin
+    (I ∷ xs) - oneᴮ (suc n)
+  ≡⟨⟩
+    rca (I ∷ xs) (I ∷ (~ zeroᴮ n)) O
+  ≡⟨⟩
+    O ∷ rca xs (~ zeroᴮ n) I
+  ≡⟨ cong (O ∷_) (rca-lift-carry xs (~ zeroᴮ n)) ⟩
+    O ∷ inc (rca xs (~ zeroᴮ n) O)
+  ≡⟨ cong (O ∷_) (sym (rca-lift-incʳ {n} {O} xs (~ zeroᴮ n))) ⟩
+    O ∷ rca xs (inc (~ zeroᴮ n)) O
+  ≡⟨ cong (λ l → O ∷ rca xs l O) (negate≡inc-~ (zeroᴮ n)) ⟩
+    O ∷ rca xs (- zeroᴮ n) O
+  ≡⟨ cong (O ∷_) (b-zeroᴮ≡b xs) ⟩
+    O ∷ xs
+  ≡⟨⟩
+    dec (I ∷ xs)
+  ∎
+
+onesᴮ+oneᴮ≡zeroᴮ : ∀ {n} → onesᴮ n + oneᴮ n ≡ zeroᴮ n
+onesᴮ+oneᴮ≡zeroᴮ {zero} = refl
+onesᴮ+oneᴮ≡zeroᴮ {suc n} = begin
+    onesᴮ (suc n) + oneᴮ (suc n)
+  ≡⟨⟩
+    rca (I ∷ onesᴮ n) (I ∷ zeroᴮ n) O
+  ≡⟨⟩
+    O ∷ rca (onesᴮ n) (zeroᴮ n) I
+  ≡⟨ cong (O ∷_) (rca-lift-carry (onesᴮ n) (zeroᴮ n)) ⟩
+    O ∷ inc (rca (onesᴮ n) (zeroᴮ n) O)
+  ≡⟨ cong (λ l → O ∷ inc l) (b+zeroᴮ≡b (onesᴮ n)) ⟩
+    O ∷ inc (onesᴮ n)
+  ≡⟨ cong (O ∷_) inc-onesᴮ≡zeroᴮ ⟩
+    O ∷ zeroᴮ n
+  ∎
 
 add-sub-involutive : ∀ {n} (xs ys : Binary n) → (xs - ys) + ys ≡ xs
 add-sub-involutive [] [] = refl
 add-sub-involutive {n} xs ys rewrite add-assocˡ xs (- ys) ys
                                    | rca-comm {n} {O} (- ys) ys 
-                                   | b-b≡zeroᵇ ys 
+                                   | b-b≡zeroᴮ ys 
                                    | add-identityʳ xs 
                                    = refl

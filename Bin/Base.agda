@@ -5,7 +5,7 @@ open import Data.Nat using (ℕ; zero; suc)
                      renaming (_+_ to _+ℕ_; _*_ to _*ℕ_)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
 open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
-open import Data.Product using (_×_)
+open import Data.Product using (uncurry; _,_; _×_)
 
 pattern I = true
 pattern O = false
@@ -25,6 +25,9 @@ zeroᴮ (suc n) = O ∷ (zeroᴮ n)
 onesᴮ : ∀ (n : ℕ) → Binary n
 onesᴮ 0       = []
 onesᴮ (suc n) = I ∷ (onesᴮ n)
+oneᴮ : ∀ (n : ℕ) → Binary n
+oneᴮ 0       = []
+oneᴮ (suc n) = I ∷ (zeroᴮ n)
 
 append : ∀ {n} → Binary n → Bit → Binary (suc n)
 append []       x = x ∷ []
@@ -95,6 +98,12 @@ _>>ᴸ1 : ∀ {n} → Binary n → Binary n
 rca : ∀ {n} → Binary n → Binary n → Bit → Binary n
 rca []       []       _     = []
 rca (x ∷ xs) (y ∷ ys) carry = (x xor y xor carry) ∷ rca xs ys ((x ∧ y) ∨ (carry ∧ (x xor y)))
+
+rca¹ : ∀ {n} → Binary n → Binary n → Bit → Binary n × Bit
+rca¹ []  [] c = [] , c
+rca¹ (x ∷ xs) (y ∷ ys) carry using carry' ← ((x ∧ y) ∨ (carry ∧ (x xor y)))
+                             with rca¹ xs ys carry'
+... | (tail , carry'') = ((x xor y xor carry) ∷ tail) , carry''
 
 -- TODO: Maybe don't discard carry?
 -- Adds 2 binary number, may cause overflow
