@@ -1,11 +1,14 @@
 module Bin.Base where
 
 open import Relation.Nullary.Decidable using (⌊_⌋; yes; no)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; NonZero)
                      renaming (_+_ to _+ℕ_; _*_ to _*ℕ_)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
-open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length)
-open import Data.Product using (uncurry; _,_; _×_)
+open import Data.Vec using (Vec; _∷_; []; zip; drop; take; splitAt; length)
+open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂; map₁)
+open import Data.Empty
+open import Data.Unit.Base
+open import Function using (const; _∘_)
 
 pattern I = true
 pattern O = false
@@ -47,6 +50,7 @@ _==_ : ∀ {n} → Binary n → Binary n → Bool
 _≠_ : ∀ {n} → Binary n → Binary n → Bool
 xs ≠ ys = not (xs == ys)
 
+-- Carryless operations
 -- Increment by 1
 inc : ∀ {n} → Binary n → Binary n
 inc []       = []
@@ -99,12 +103,6 @@ rca : ∀ {n} → Binary n → Binary n → Bit → Binary n
 rca []       []       _     = []
 rca (x ∷ xs) (y ∷ ys) carry = (x xor y xor carry) ∷ rca xs ys ((x ∧ y) ∨ (carry ∧ (x xor y)))
 
-rca¹ : ∀ {n} → Binary n → Binary n → Bit → Binary n × Bit
-rca¹ []  [] c = [] , c
-rca¹ (x ∷ xs) (y ∷ ys) carry using carry' ← ((x ∧ y) ∨ (carry ∧ (x xor y)))
-                             with rca¹ xs ys carry'
-... | (tail , carry'') = ((x xor y xor carry) ∷ tail) , carry''
-
 -- TODO: Maybe don't discard carry?
 -- Adds 2 binary number, may cause overflow
 add : ∀ {n} → Binary n → Binary n → Binary n
@@ -119,8 +117,6 @@ sub xs ys = add xs (- ys)
 _-_ : ∀ {n} → Binary n → Binary n → Binary n
 xs - ys = sub xs ys
 
--- ^-swap : ∀ {n} → Binary n × Binary n → 
-
 -- Nat-Binary conversions
 ℕ⇒Binary : (d n : ℕ) → Binary n
 ℕ⇒Binary 0 n       = zeroᴮ n
@@ -132,4 +128,4 @@ Binary⇒ℕ []       = 0
 Binary⇒ℕ (x ∷ xs) with x
 ...               | O = 2 *ℕ Binary⇒ℕ xs
 ...               | I = 1 +ℕ 2 *ℕ Binary⇒ℕ xs
-  
+    

@@ -176,15 +176,16 @@ not-distrib-and O y = refl
 rca-no-carry : ∀ {n} (x : Bit) (xs : Binary n) (y : Bit) (ys : Binary n) → rca (x ∷ xs) (y ∷ ys) O ≡ (x xor y) ∷ rca xs ys (x ∧ y)
 rca-no-carry O [] O [] = refl
 rca-no-carry x xs y ys = begin
-    rca (x ∷ xs) (y ∷ ys) O ≡⟨⟩
-  (x xor y xor O) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y))) 
-    ≡⟨ cong (λ l → (x xor l) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y)))) (false-xorʳ y) ⟩
-  (x xor y) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y))) 
-    ≡⟨ cong (λ l → (x xor y) ∷ rca xs ys ((x ∧ y) ∨ l)) (∧-zeroˡ (x xor y)) ⟩
-  (x xor y) ∷ rca xs ys ((x ∧ y) ∨ O) 
-    ≡⟨ cong (λ l → (x xor y) ∷ rca xs ys l) (∨-identityʳ (x ∧ y)) ⟩
-  (x xor y) ∷ rca xs ys (x ∧ y) 
-    ∎
+    rca (x ∷ xs) (y ∷ ys) O 
+  ≡⟨⟩
+    (x xor y xor O) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y))) 
+  ≡⟨ cong (λ l → (x xor l) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y)))) (false-xorʳ y) ⟩
+    (x xor y) ∷ rca xs ys ((x ∧ y) ∨ (O ∧ (x xor y))) 
+  ≡⟨ cong (λ l → (x xor y) ∷ rca xs ys ((x ∧ y) ∨ l)) (∧-zeroˡ (x xor y)) ⟩
+    (x xor y) ∷ rca xs ys ((x ∧ y) ∨ O) 
+  ≡⟨ cong (λ l → (x xor y) ∷ rca xs ys l) (∨-identityʳ (x ∧ y)) ⟩
+    (x xor y) ∷ rca xs ys (x ∧ y) 
+  ∎
 
 rca-comm : ∀ {n} {carry : Bit} (xs ys : Binary n) → rca xs ys carry ≡ rca ys xs carry
 rca-comm [] [] = refl
@@ -416,24 +417,24 @@ inc-b≡b+oneᴮ {suc n} (I ∷ xs) = begin
     (I ∷ xs) + oneᴮ (suc n)
   ∎
 
-add-onesᴮ≡dec : ∀ {n} (xs : Binary n) → rca xs (onesᴮ n) O ≡ dec xs
-add-onesᴮ≡dec [] = refl
-add-onesᴮ≡dec {suc n} (O ∷ xs) = begin
+b+onesᴮ≡dec : ∀ {n} (xs : Binary n) → rca xs (onesᴮ n) O ≡ dec xs
+b+onesᴮ≡dec [] = refl
+b+onesᴮ≡dec {suc n} (O ∷ xs) = begin
     rca (O ∷ xs) (onesᴮ (suc n)) O
   ≡⟨⟩
     I ∷ rca xs (onesᴮ n) O
-  ≡⟨ cong (I ∷_) (add-onesᴮ≡dec xs) ⟩
+  ≡⟨ cong (I ∷_) (b+onesᴮ≡dec xs) ⟩
     I ∷ dec xs
   ≡⟨⟩
     dec (O ∷ xs)
   ∎
-add-onesᴮ≡dec {suc n} (I ∷ xs) = begin
+b+onesᴮ≡dec {suc n} (I ∷ xs) = begin
     rca (I ∷ xs) (onesᴮ (suc n)) O
   ≡⟨⟩
     O ∷ rca xs (onesᴮ n) I
   ≡⟨ cong (O ∷_) (rca-lift-carry xs (onesᴮ n)) ⟩
     O ∷ inc (rca xs (onesᴮ n) O)
-  ≡⟨ cong (λ l → O ∷ inc l) (add-onesᴮ≡dec xs) ⟩
+  ≡⟨ cong (λ l → O ∷ inc l) (b+onesᴮ≡dec xs) ⟩
     O ∷ inc (dec xs)
   ≡⟨ cong (O ∷_) (inc-dec-involutive′ xs) ⟩
     O ∷ xs
@@ -451,7 +452,7 @@ b-oneᴮ≡dec {suc n} (O ∷ xs) = begin
     I ∷ rca xs (~ zeroᴮ n) O
   ≡⟨ cong (λ l → I ∷ rca xs l O) ~-zeroᴮ≡onesᴮ ⟩
     I ∷ rca xs (onesᴮ n) O
-  ≡⟨ cong (I ∷_) (add-onesᴮ≡dec xs) ⟩
+  ≡⟨ cong (I ∷_) (b+onesᴮ≡dec xs) ⟩
     I ∷ dec xs
   ≡⟨⟩
     dec (O ∷ xs)
