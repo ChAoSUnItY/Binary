@@ -3,7 +3,7 @@ module Bin.Properties where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _>_; s<s)
 open import Data.Vec using (Vec; _∷_; []; drop; take; splitAt; length; head)
 open import Data.Bool using (_∧_; _∨_; not; _xor_; T)
 open import Data.Bool.Properties using (not-involutive;
@@ -394,6 +394,8 @@ b-zeroᴮ≡b [] = refl
 b-zeroᴮ≡b {suc n} (O ∷ xs) rewrite negate≡inc-~ (zeroᴮ n) | b-zeroᴮ≡b xs = refl
 b-zeroᴮ≡b {suc n} (I ∷ xs) rewrite negate≡inc-~ (zeroᴮ n) | b-zeroᴮ≡b xs = refl
 
+-- additional increment / decrement theorems
+
 inc-b≡b+oneᴮ : ∀ {n} (xs : Binary n) → inc xs ≡ xs + oneᴮ n
 inc-b≡b+oneᴮ [] = refl
 inc-b≡b+oneᴮ {suc n} (O ∷ xs) = begin
@@ -491,6 +493,8 @@ onesᴮ+oneᴮ≡zeroᴮ {suc n} = begin
     O ∷ zeroᴮ n
   ∎
 
+-- addition-subtraction-combined theorems
+
 add-sub-involutive : ∀ {n} (xs ys : Binary n) → (xs - ys) + ys ≡ xs
 add-sub-involutive [] [] = refl
 add-sub-involutive {n} xs ys rewrite add-assocˡ xs (- ys) ys
@@ -498,3 +502,14 @@ add-sub-involutive {n} xs ys rewrite add-assocˡ xs (- ys) ys
                                    | b-b≡zeroᴮ ys 
                                    | add-identityʳ xs 
                                    = refl
+
+-- zext theorems
+
+zext-exact-size : ∀ {n} (xs : Binary n) → zext xs n ≡ xs
+zext-exact-size [] = refl
+zext-exact-size (x ∷ xs) rewrite zext-exact-size xs = refl
+
+zext-extend-then-truncate : ∀ {n m} {_ : m > n} (xs : Binary n) → zext (zext xs m) n ≡ xs
+zext-extend-then-truncate {_} {zero} {_} [] = refl
+zext-extend-then-truncate {_} {suc m} {_} [] = refl
+zext-extend-then-truncate {suc n} {suc m} {s<s h} (x ∷ xs) rewrite zext-extend-then-truncate {n} {m} {h} xs = refl

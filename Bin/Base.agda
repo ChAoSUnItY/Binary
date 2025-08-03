@@ -1,13 +1,10 @@
 module Bin.Base where
 
-open import Relation.Nullary.Decidable using (⌊_⌋; yes; no)
-open import Data.Nat using (ℕ; zero; suc; NonZero)
+open import Data.Nat using (ℕ; zero; suc; _>_)
                      renaming (_+_ to _+ℕ_; _*_ to _*ℕ_)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
-open import Data.Vec using (Vec; _∷_; []; zip; drop; take; splitAt; length)
+open import Data.Vec using (Vec; _∷_; []; _++_; zip; drop; take; splitAt; length)
 open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂; map₁)
-open import Data.Empty
-open import Data.Unit.Base
 open import Function using (const; _∘_)
 
 pattern I = true
@@ -98,6 +95,27 @@ _>>ᴸ1 : ∀ {n} → Binary n → Binary n
 []       >>ᴸ1 = []
 (_ ∷ xs) >>ᴸ1 = append xs O
 
+-- Extending functions
+
+-- Zero extending
+zext : ∀ {n} → Binary n → (m : ℕ) → Binary m
+zext []       zero    = []
+zext (_ ∷ _)  zero    = []
+zext []       (suc m) = O ∷ zext [] m
+zext (x ∷ xs) (suc m) = x ∷ zext xs m
+
+-- Sign extending
+sext' : ∀ {n} → Binary n → Bit → (m : ℕ) → Binary m
+sext' []            _  zero    = []
+sext' (_ ∷ [])      _  zero    = []
+sext' (_ ∷ _ ∷ _)   _  zero    = []
+sext' []            sb (suc m) = sb ∷ sext' [] sb m
+sext' (x ∷ [])      _  (suc m) = x ∷ sext' [] x m
+sext' (x ∷ xs)      _  (suc m) = x ∷ sext' xs O m
+
+sext : ∀ {n} → Binary n → (m : ℕ) → Binary m
+sext xs m = sext' xs O m
+
 -- Ripple carry add simulation
 rca : ∀ {n} → Binary n → Binary n → Bit → Binary n
 rca []       []       _     = []
@@ -128,4 +146,3 @@ Binary⇒ℕ []       = 0
 Binary⇒ℕ (x ∷ xs) with x
 ...               | O = 2 *ℕ Binary⇒ℕ xs
 ...               | I = 1 +ℕ 2 *ℕ Binary⇒ℕ xs
-    
