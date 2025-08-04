@@ -10,7 +10,6 @@ open import Data.Bool.Properties using (not-involutive;
                                         ∨-comm; ∨-assoc; ∨-identityʳ; ∨-zeroʳ;
                                         ∧-comm; ∧-assoc; ∧-zeroˡ; ∧-zeroʳ; ∧-distribʳ-xor; ∧-identityʳ; ∧-identityˡ;
                                         true-xor; xor-same; xor-comm; xor-assoc; xor-identityʳ; xor-identityˡ; ∧-distribˡ-xor; not-distribʳ-xor)
-open import Data.Product using (uncurry; _,_; _×_; proj₁)
 open import Bin.Base
 
 -- n-bit Binary properties 

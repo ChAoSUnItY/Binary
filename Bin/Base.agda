@@ -1,10 +1,12 @@
 module Bin.Base where
-
-open import Data.Nat using (ℕ; zero; suc; _>_)
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (refl)
+open import Data.Nat using (ℕ; zero; suc; 2+; _>_; s<s; z<s)
                      renaming (_+_ to _+ℕ_; _*_ to _*ℕ_)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
 open import Data.Vec using (Vec; _∷_; []; _++_; zip; drop; take; splitAt; length)
 open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂; map₁)
+open import Data.Bool.Base using (Bool; true; false; T; not)
 open import Function using (const; _∘_)
 
 pattern I = true
@@ -15,8 +17,45 @@ Bit = Bool
 
 -- In this case, we simluate the binary operations
 -- in big endian to best fit Vec's data structure.
+--
+-- For example, for a normalized binary representation
+-- O ∷ I ∷ O ∷ O ∷ [], it represents a binary with 4 bits
+-- and represents decimal value 2.
 Binary : ℕ → Set
 Binary n = Vec Bit n
+
+-- Definitions for signed number signess predicates, notice 
+-- that these definitions do not consider 0-bit binary to be
+-- either negative or positive binary under 2's complement
+-- system, which is meaningless in this case.
+interleaved mutual
+  negative : ∀ {n} → Binary (suc n) → Bool
+  positive : ∀ {n} → Binary (suc n) → Bool
+
+  record SignedNegative {n} (xs : Binary (suc n)) : Set where
+    field
+      signedNegative : T (negative xs)
+
+  record SignedPositive {n} (xs : Binary (suc n)) : Set where
+    field
+      signedPositive : T (positive xs)
+
+  instance
+    signedNegative : ∀ {n} {xs : Binary (suc n)} {h : T (negative xs)} → SignedNegative xs
+    signedNegative {_} {_} {h} = record { signedNegative = h }
+
+  instance
+    signedPositive : ∀ {n} {xs : Binary (suc n)} {h : T (positive xs)} → SignedPositive xs
+    signedPositive {_} {_} {h} = record { signedPositive = h }
+
+  negative (O ∷ []) = false
+  positive (O ∷ []) = true
+
+  negative (I ∷ []) = true
+  positive (I ∷ []) = false
+
+  negative (x ∷ x' ∷ xs) = negative (x' ∷ xs)
+  positive (x ∷ x' ∷ xs) = positive (x' ∷ xs)
 
 zeroᴮ : ∀ (n : ℕ) → Binary n
 zeroᴮ 0       = []
@@ -25,9 +64,18 @@ zeroᴮ (suc n) = O ∷ (zeroᴮ n)
 onesᴮ : ∀ (n : ℕ) → Binary n
 onesᴮ 0       = []
 onesᴮ (suc n) = I ∷ (onesᴮ n)
+
 oneᴮ : ∀ (n : ℕ) → Binary n
 oneᴮ 0       = []
 oneᴮ (suc n) = I ∷ (zeroᴮ n)
+
+signed-max : ∀ (n : ℕ) {_ : n > 0} → Binary n
+signed-max (suc 0) = (O ∷ [])
+signed-max (2+ n) = I ∷ (signed-max (suc n) {z<s})
+
+signed-min : ∀ (n : ℕ) {_ : n > 0} → Binary n
+signed-min (suc 0) = I ∷ []
+signed-min (2+ n) = O ∷ (signed-min (suc n) {z<s})
 
 append : ∀ {n} → Binary n → Bit → Binary (suc n)
 append []       x = x ∷ []
