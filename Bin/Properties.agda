@@ -49,6 +49,14 @@ nneg-involutive (x ∷ xs) with x
   ∎
 
 -- increment / decrement properties
+inc-ones≡zero : ∀ {n} → inc (ones n) ≡ zero n
+inc-ones≡zero {ℕ.zero} = refl
+inc-ones≡zero {suc n} rewrite inc-ones≡zero {n} = refl
+
+dec-zero≡ones : ∀ {n} → dec (zero n) ≡ ones n
+dec-zero≡ones {ℕ.zero} = refl
+dec-zero≡ones {suc n} rewrite dec-zero≡ones {n} = refl
+
 inc-inj : ∀ {n} {xs ys : Binary n} → inc xs ≡ inc ys → xs ≡ ys
 inc-inj {_} {[]} {[]} = id
 inc-inj {suc n} {O ∷ xs} {I ∷ ys} ()
@@ -163,3 +171,9 @@ dec-inc-elim (x ∷ xs) with x
 
 ^-inverseʳ : ∀ {n} (xs : Binary n) → xs ^ (~ xs) ≡ ones n
 ^-inverseʳ = zipWith-inverseʳ (xor-inverseʳ)
+
+-- Additional properties
+∧-true-implies-xor-false : (x y : Bit) (h1 : x ∧ y ≡ I) → x xor y ≡ O
+∧-true-implies-xor-false O _ ()
+∧-true-implies-xor-false I O ()
+∧-true-implies-xor-false I I _ = refl

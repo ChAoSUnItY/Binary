@@ -29,11 +29,6 @@ rca-no-carry {n} x y xs ys = begin
     (x xor y) ∷ rca xs ys (x ∧ y)
   ∎
 
-∧-true-implies-xor-false : (x y : Bit) (h1 : x ∧ y ≡ I) → x xor y ≡ O
-∧-true-implies-xor-false O _ ()
-∧-true-implies-xor-false I O ()
-∧-true-implies-xor-false I I _ = refl
-
 -- Advanced RCA theorems
 rca-comm : ∀ {n} (xs ys : Binary n) (c : Bit) → rca xs ys c ≡ rca ys xs c
 rca-comm [] [] _ = refl
@@ -367,3 +362,10 @@ rca-assoc xs ys zs I I = begin
 
 +-assoc : ∀ {n} (xs ys zs : Binary n) → (xs + ys) + zs ≡ xs + (ys + zs)
 +-assoc = rca-assoc-no-carry
+
+-- Additional theorems for rca
+~-+-ones : ∀ {n} (xs : Binary n) → xs + (~ xs) ≡ ones n
+~-+-ones [] = refl
+~-+-ones (x ∷ xs) with x
+... | O rewrite ~-+-ones xs = refl
+... | I rewrite ~-+-ones xs = refl

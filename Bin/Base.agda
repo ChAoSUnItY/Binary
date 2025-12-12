@@ -1,12 +1,9 @@
 module Bin.Base where
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (refl)
+
 open import Data.Nat using (ℕ; suc)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
-open import Data.Vec using (Vec; _∷_; _∷ʳ_; []; _++_; replicate; map; zip; zipWith)
-open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂; map₁)
-open import Data.Bool.Base using (Bool; true; false; T; not)
-open import Function using (const; _∘_)
+open import Data.Vec using (Vec; _∷_; []; replicate; map; zipWith)
+open import Data.Bool using (Bool; true; false; not)
 
 pattern I = true
 pattern O = false
