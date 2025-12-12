@@ -4,7 +4,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; suc)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
 open import Data.Vec using (Vec; _∷_; [])
 open import Bin.Base
@@ -109,10 +109,10 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
 
 -- Conversion
 >ᵘ-to-<ᵘ : ∀ {n} {xs ys : Binary (suc n)} → xs >ᵘ ys → ys <ᵘ xs
->ᵘ-to-<ᵘ {zero} {O ∷ []} {O ∷ []} gth = ⊥-elim (gth (inj₂ refl))
->ᵘ-to-<ᵘ {zero} {O ∷ []} {I ∷ []} gth = ⊥-elim (gth (inj₁ (lt-head refl lt)))
->ᵘ-to-<ᵘ {zero} {I ∷ []} {O ∷ []} gth = lt-head refl lt
->ᵘ-to-<ᵘ {zero} {I ∷ []} {I ∷ []} gth = ⊥-elim (gth (inj₂ refl))
+>ᵘ-to-<ᵘ {ℕ.zero} {O ∷ []} {O ∷ []} gth = ⊥-elim (gth (inj₂ refl))
+>ᵘ-to-<ᵘ {ℕ.zero} {O ∷ []} {I ∷ []} gth = ⊥-elim (gth (inj₁ (lt-head refl lt)))
+>ᵘ-to-<ᵘ {ℕ.zero} {I ∷ []} {O ∷ []} gth = lt-head refl lt
+>ᵘ-to-<ᵘ {ℕ.zero} {I ∷ []} {I ∷ []} gth = ⊥-elim (gth (inj₂ refl))
 >ᵘ-to-<ᵘ {suc n} {O ∷ xs} {O ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
 >ᵘ-to-<ᵘ {suc n} {O ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ xs>ys)
   where
