@@ -37,6 +37,33 @@ open import Bin.AddProperties
 <ᵘ-cons-general {{lt}} (lt-tail h) = h
 <ᵘ-cons-general {{lt}} (lt-head _ ())
 
+-- trichotomy
+data Trichotomy {n} (xs ys : Binary (suc n)) : Set where
+  tri-lt : xs <ᵘ ys → Trichotomy xs ys
+  tri-eq : xs ≡ ys → Trichotomy xs ys
+  tri-gt : xs >ᵘ ys → Trichotomy xs ys
+
+trichotomy : ∀ {n} (xs ys : Binary (suc n)) → Trichotomy xs ys
+trichotomy {ℕ.zero} (x ∷ []) (y ∷ []) with x | y
+... | O | O = tri-eq refl
+... | O | I = tri-lt (lt-head refl lt)
+... | I | O = tri-gt (λ { (inj₁ (lt-tail ()))
+                        ; (inj₁ (lt-head refl ()))
+                        ; (inj₂ ()) })
+... | I | I = tri-eq refl
+trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
+... | tri-lt lth = tri-lt (lt-tail lth)
+... | tri-gt gth = tri-gt (λ { (inj₁ (lt-tail l)) → gth (inj₁ l)
+                             ; (inj₁ (lt-head refl _)) → gth (inj₂ refl)
+                             ; (inj₂ refl) → gth (inj₂ refl) })
+... | tri-eq refl with x | y
+...   | O | O = tri-eq refl
+...   | I | O = tri-gt (λ { (inj₁ (lt-tail l)) → <ᵘ-irrefl l
+                          ; (inj₁ (lt-head refl ()))
+                          ; (inj₂ ()) })
+...   | O | I = tri-lt (lt-head refl lt)
+...   | I | I = tri-eq refl
+
 -- lte
 ≤ᵘ-refl : ∀ {n} {xs : Binary (suc n)} → xs ≤ᵘ xs
 ≤ᵘ-refl {ℕ.zero} = inj₂ refl
@@ -298,10 +325,4 @@ inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
     ... | inj₂ ovf = contra-ovf ovf lth
 
 ... | (inj₁ (lt-head a ()))
-... | (inj₂ eq) = let
-    eqh = cong (Data.Vec.head) eq
-  in
-    eqh-contra eqh
-  where
-    eqh-contra : I ≡ O → ⊥
-    eqh-contra ()
+... | (inj₂ ())

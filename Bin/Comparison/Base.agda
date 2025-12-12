@@ -54,13 +54,6 @@ xs >ᵘ ys = ¬(xs ≤ᵘ ys)
 _≥ᵘ_ : ∀ {n} → Binary n → Binary n → Set
 xs ≥ᵘ ys = ¬(xs <ᵘ ys)
 
-data Trichotomy {n} (xs ys : Binary n) : Set where
-  tri-lt : xs <ᵘ ys → Trichotomy xs ys
-  tri-eq : xs ≡ ys → Trichotomy xs ys
-  tri-gt : xs >ᵘ ys → Trichotomy xs ys
-
-postulate trichotomy : ∀ {n} (xs ys : Binary n) → Trichotomy xs ys
-
 AddNotOverflow : ∀ {n} → Binary n → Binary n → Set
 AddNotOverflow xs ys = ys ≤ᵘ (~ xs)
 
