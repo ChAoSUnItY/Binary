@@ -39,7 +39,7 @@ open import Bin.AddProperties
 
 -- lte
 ≤ᵘ-refl : ∀ {n} {xs : Binary (suc n)} → xs ≤ᵘ xs
-≤ᵘ-refl {zero} = inj₂ refl
+≤ᵘ-refl {ℕ.zero} = inj₂ refl
 ≤ᵘ-refl {suc n} = inj₂ refl 
 
 ≤ᵘ-trans : ∀ {n} {xs ys zs : Binary (suc n)} → xs ≤ᵘ ys → ys ≤ᵘ zs → xs ≤ᵘ zs
@@ -95,19 +95,44 @@ open import Bin.AddProperties
                  → (x ∷ xs) >ᵘ (y ∷ ys)
 >ᵘ-cons-general' {{gt}} tail-gth lte = tail-gth (inj₁ (≤ᵘ-cons-general-strict lte))
 
+-- gte
+split-≥ᵘ : ∀ {n} {xs ys : Binary (suc n)} → (xs ≥ᵘ ys) → (xs ≡ ys) ⊎ (xs >ᵘ ys)
+split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
+... | tri-lt lth = ⊥-elim (geh lth)
+... | tri-eq eqh = inj₁ eqh
+... | tri-gt gth = inj₂ gth
+
 -- Mixed
 ≤ᵘ-<ᵘ-trans : ∀ {n} {xs ys zs : Binary n} → xs ≤ᵘ ys → ys <ᵘ zs → xs <ᵘ zs
 ≤ᵘ-<ᵘ-trans {suc n} (inj₁ x<y) y<z = <ᵘ-trans x<y y<z
 ≤ᵘ-<ᵘ-trans (inj₂ refl) y<z = y<z
 
+-- Conversion
+>ᵘ-to-<ᵘ : ∀ {n} {xs ys : Binary (suc n)} → xs >ᵘ ys → ys <ᵘ xs
+>ᵘ-to-<ᵘ {zero} {O ∷ []} {O ∷ []} gth = ⊥-elim (gth (inj₂ refl))
+>ᵘ-to-<ᵘ {zero} {O ∷ []} {I ∷ []} gth = ⊥-elim (gth (inj₁ (lt-head refl lt)))
+>ᵘ-to-<ᵘ {zero} {I ∷ []} {O ∷ []} gth = lt-head refl lt
+>ᵘ-to-<ᵘ {zero} {I ∷ []} {I ∷ []} gth = ⊥-elim (gth (inj₂ refl))
+>ᵘ-to-<ᵘ {suc n} {O ∷ xs} {O ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
+>ᵘ-to-<ᵘ {suc n} {O ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ xs>ys)
+  where
+    xs>ys : xs >ᵘ ys
+    xs>ys (inj₁ x<y) = gth (inj₁ (lt-tail x<y))
+    xs>ys (inj₂ x≡y) = gth (inj₁ (lt-head x≡y lt))
+>ᵘ-to-<ᵘ {suc n} {I ∷ xs} {O ∷ ys} gth with trichotomy ys xs
+... | tri-lt y<x = lt-tail y<x
+... | tri-eq y=x = lt-head y=x lt
+... | tri-gt y>x = ⊥-elim (gth (inj₁ (lt-tail (>ᵘ-to-<ᵘ y>x))))
+>ᵘ-to-<ᵘ {suc n} {I ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
+
 -- Common facts
 ones-≥ᵘ-zero : ∀ {n} → ones n ≥ᵘ Bin.Base.zero n
-ones-≥ᵘ-zero {zero} ()
+ones-≥ᵘ-zero {ℕ.zero} ()
 ones-≥ᵘ-zero {suc n} lth = ones-≥ᵘ-zero (<ᵘ-cons-general lth)
 
 -- Logical operation combination properties
 ^-lte-∥ : ∀ {n} {xs ys : Binary (suc n)} → (xs ^ ys) ≤ᵘ (xs ∥ ys)
-^-lte-∥ {zero} {x ∷ []} {y ∷ []} with x | y
+^-lte-∥ {ℕ.zero} {x ∷ []} {y ∷ []} with x | y
 ... | O | O = inj₂ refl
 ... | I | O = inj₂ refl
 ... | O | I = inj₂ refl
@@ -120,7 +145,7 @@ ones-≥ᵘ-zero {suc n} lth = ones-≥ᵘ-zero (<ᵘ-cons-general lth)
 ... | inj₂ eq | I | I = inj₁ (lt-head eq lt)
 
 &-lte-== : ∀ {n} {xs ys : Binary (suc n)} → (xs & ys) ≤ᵘ (xs == ys)
-&-lte-== {zero} {x ∷ []} {y ∷ []} with x | y
+&-lte-== {ℕ.zero} {x ∷ []} {y ∷ []} with x | y
 ... | O | O = inj₁ (lt-head refl lt)
 ... | I | O = inj₂ refl
 ... | O | I = inj₂ refl
@@ -132,23 +157,23 @@ ones-≥ᵘ-zero {suc n} lth = ones-≥ᵘ-zero (<ᵘ-cons-general lth)
 ... | inj₂ eq | O | I = inj₂ (cong (O ∷_) eq)
 ... | inj₂ eq | I | I = inj₂ (cong (I ∷_) eq)
 
-+-≤ᵘ-inc : ∀ {n} {xs ys : Binary (suc n)} → AddNotMax xs ys → (xs + ys) <ᵘ inc (xs + ys)
-+-≤ᵘ-inc {zero} {O ∷ []} {O ∷ []} snoh = snoh
-+-≤ᵘ-inc {zero} {I ∷ []} {O ∷ []} (lt-tail ())
-+-≤ᵘ-inc {zero} {I ∷ []} {O ∷ []} (lt-head _ ())
-+-≤ᵘ-inc {zero} {O ∷ []} {I ∷ []} (lt-tail ())
-+-≤ᵘ-inc {zero} {O ∷ []} {I ∷ []} (lt-head _ ())
-+-≤ᵘ-inc {zero} {I ∷ []} {I ∷ []} snoh = lt-head refl lt
-+-≤ᵘ-inc {suc n} {O ∷ xs} {O ∷ ys} snoh = lt-head refl lt
-+-≤ᵘ-inc {suc n} {I ∷ xs} {O ∷ ys} (lt-tail lth) = lt-tail (+-≤ᵘ-inc lth)
-+-≤ᵘ-inc {suc n} {I ∷ xs} {O ∷ ys} (lt-head _ ())
-+-≤ᵘ-inc {suc n} {O ∷ xs} {I ∷ ys} (lt-tail lth) = lt-tail (+-≤ᵘ-inc lth)
-+-≤ᵘ-inc {suc n} {O ∷ xs} {I ∷ ys} (lt-head _ ())
-+-≤ᵘ-inc {suc n} {I ∷ xs} {I ∷ ys} snoh = lt-head refl lt
++-<ᵘ-inc : ∀ {n} {xs ys : Binary (suc n)} → AddNotMax xs ys → (xs + ys) <ᵘ inc (xs + ys)
++-<ᵘ-inc {ℕ.zero} {O ∷ []} {O ∷ []} snoh = snoh
++-<ᵘ-inc {ℕ.zero} {I ∷ []} {O ∷ []} (lt-tail ())
++-<ᵘ-inc {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ())
++-<ᵘ-inc {ℕ.zero} {O ∷ []} {I ∷ []} (lt-tail ())
++-<ᵘ-inc {ℕ.zero} {O ∷ []} {I ∷ []} (lt-head _ ())
++-<ᵘ-inc {ℕ.zero} {I ∷ []} {I ∷ []} snoh = lt-head refl lt
++-<ᵘ-inc {suc n} {O ∷ xs} {O ∷ ys} snoh = lt-head refl lt
++-<ᵘ-inc {suc n} {I ∷ xs} {O ∷ ys} (lt-tail lth) = lt-tail (+-<ᵘ-inc lth)
++-<ᵘ-inc {suc n} {I ∷ xs} {O ∷ ys} (lt-head _ ())
++-<ᵘ-inc {suc n} {O ∷ xs} {I ∷ ys} (lt-tail lth) = lt-tail (+-<ᵘ-inc lth)
++-<ᵘ-inc {suc n} {O ∷ xs} {I ∷ ys} (lt-head _ ())
++-<ᵘ-inc {suc n} {I ∷ xs} {I ∷ ys} snoh = lt-head refl lt
 
 inc-≤ᵘ-max : ∀ {n} {xs : Binary (suc n)} → xs <ᵘ ones (suc n) → inc xs ≤ᵘ ones (suc n)
-inc-≤ᵘ-max {zero} {O ∷ []} h = inj₂ refl
-inc-≤ᵘ-max {zero} {I ∷ []} h = inj₁ (lt-head refl lt)
+inc-≤ᵘ-max {ℕ.zero} {O ∷ []} h = inj₂ refl
+inc-≤ᵘ-max {ℕ.zero} {I ∷ []} h = inj₁ (lt-head refl lt)
 inc-≤ᵘ-max {suc n} {O ∷ xs} (lt-tail lth) = inj₁ (lt-tail lth)
 inc-≤ᵘ-max {suc n} {O ∷ xs} (lt-head refl lt) = inj₂ refl
 inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
@@ -156,11 +181,11 @@ inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
 ... | inj₂ eqh = inj₁ (lt-head eqh lt)
 
 +-no-overflow : ∀ {n} {xs ys : Binary (suc n)} → AddNotMax xs ys → (xs + ys) <ᵘ ones (suc n)
-+-no-overflow {zero} {O ∷ []} {O ∷ []} snoh = snoh
-+-no-overflow {zero} {I ∷ []} {O ∷ []} (lt-tail ())
-+-no-overflow {zero} {I ∷ []} {O ∷ []} (lt-head refl ())
-+-no-overflow {zero} {O ∷ []} {I ∷ []} snoh = snoh
-+-no-overflow {zero} {I ∷ []} {I ∷ []} snoh = lt-head refl lt
++-no-overflow {ℕ.zero} {O ∷ []} {O ∷ []} snoh = snoh
++-no-overflow {ℕ.zero} {I ∷ []} {O ∷ []} (lt-tail ())
++-no-overflow {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head refl ())
++-no-overflow {ℕ.zero} {O ∷ []} {I ∷ []} snoh = snoh
++-no-overflow {ℕ.zero} {I ∷ []} {I ∷ []} snoh = lt-head refl lt
 +-no-overflow {suc n} {O ∷ xs} {O ∷ ys} (lt-tail lth) = lt-tail (+-no-overflow lth)
 +-no-overflow {suc n} {O ∷ xs} {O ∷ ys} (lt-head ys≡~xs lt) = lt-head (trans (cong (xs +_) ys≡~xs) (~-+-ones xs)) lt
 +-no-overflow {suc n} {I ∷ xs} {O ∷ ys} (lt-tail lth) = lt-tail (+-no-overflow lth)
@@ -172,11 +197,34 @@ inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
 ... | inj₂ eqh = lt-head (trans (rca-carry-lift-inc xs ys) eqh) lt
 +-no-overflow {suc n} {I ∷ xs} {I ∷ ys} (lt-head _ ())
 
+inc-absurd : ∀ {n} {xs ys : Binary (suc n)} → xs <ᵘ ys → ys <ᵘ inc xs → ⊥
+inc-absurd {ℕ.zero} {O ∷ []} {O ∷ []} (lt-tail ()) _
+inc-absurd {ℕ.zero} {O ∷ []} {O ∷ []} (lt-head _ ()) _
+inc-absurd {ℕ.zero} {O ∷ []} {I ∷ []} _ (lt-tail ())
+inc-absurd {ℕ.zero} {O ∷ []} {I ∷ []} _ (lt-head _ ())
+inc-absurd {ℕ.zero} {I ∷ []} {O ∷ []} (lt-tail ()) _
+inc-absurd {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ()) _
+inc-absurd {ℕ.zero} {I ∷ []} {I ∷ []} (lt-tail ()) _
+inc-absurd {ℕ.zero} {I ∷ []} {I ∷ []} (lt-head _ ()) _
+inc-absurd {suc n} {O ∷ xs} {O ∷ ys} (lt-tail xs<ys) (lt-tail ys<xs) = <ᵘ-asym xs<ys ys<xs
+inc-absurd {suc n} {O ∷ xs} {O ∷ ys} (lt-tail xs<ys) (lt-head refl lt) = <ᵘ-irrefl xs<ys
+inc-absurd {suc n} {O ∷ xs} {O ∷ ys} (lt-head refl ()) _
+inc-absurd {suc n} {O ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-tail ys<xs) = <ᵘ-asym xs<ys ys<xs
+inc-absurd {suc n} {O ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-head refl ())
+inc-absurd {suc n} {O ∷ xs} {I ∷ ys} (lt-head refl lt) (lt-tail ys<xs) = <ᵘ-irrefl ys<xs
+inc-absurd {suc n} {O ∷ xs} {I ∷ ys} (lt-head refl lt) (lt-head refl ())
+inc-absurd {suc n} {I ∷ xs} {O ∷ ys} (lt-tail xs<ys) (lt-tail ys<inc-xs) = inc-absurd xs<ys ys<inc-xs
+inc-absurd {suc n} {I ∷ xs} {O ∷ ys} (lt-tail xs<ys) (lt-head refl ())
+inc-absurd {suc n} {I ∷ xs} {O ∷ ys} (lt-head refl ()) _
+inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-tail ys<inc-xs) = inc-absurd xs<ys ys<inc-xs
+inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-head refl ())
+inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
+
 ∥-lte-+ : ∀ {n} {xs ys : Binary (suc n)} → AddNotOverflow xs ys → (xs ∥ ys) ≤ᵘ (xs + ys)
-∥-lte-+ {zero} {O ∷ []} {O ∷ []} noh = inj₂ refl
-∥-lte-+ {zero} {I ∷ []} {O ∷ []} noh = inj₂ refl
-∥-lte-+ {zero} {O ∷ []} {I ∷ []} noh = inj₂ refl
-∥-lte-+ {zero} {I ∷ []} {I ∷ []} noh with noh
+∥-lte-+ {ℕ.zero} {O ∷ []} {O ∷ []} noh = inj₂ refl
+∥-lte-+ {ℕ.zero} {I ∷ []} {O ∷ []} noh = inj₂ refl
+∥-lte-+ {ℕ.zero} {O ∷ []} {I ∷ []} noh = inj₂ refl
+∥-lte-+ {ℕ.zero} {I ∷ []} {I ∷ []} noh with noh
 ... | (inj₁ (lt-head refl ()))
 ... | (inj₂ ())
 ∥-lte-+ {suc n} {O ∷ xs} {O ∷ ys} noh =
@@ -198,47 +246,16 @@ inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
   let
     ys<~xs = ≤ᵘ-cons-general-strict noh
     ih = ∥-lte-+ (inj₁ ys<~xs)
-    inc-lth = +-≤ᵘ-inc ys<~xs
+    inc-lth = +-<ᵘ-inc ys<~xs
     ih' = ≤ᵘ-<ᵘ-trans ih inc-lth
   in
     inj₁ ((lt-tail (subst ((xs ∥ ys) <ᵘ_) (sym (rca-carry-lift-inc xs ys)) ih')))
 
-lemma-contra : ∀ {n} {xs ys : Binary (suc n)} 
-               → ys ≥ᵘ (~ xs)
-               → (xs ∥ ys) <ᵘ (rca xs ys true)
-               → ⊥
-lemma-contra {n} {xs} {ys} geh lth =
-  -- helper (split-ge geh)
-  helper (split-ge geh)
-  where
-    postulate
-      contra-ovf : ∀ {n} {xs ys : Binary (suc n)} → ys >ᵘ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys true) → ⊥
-
-    split-ge : ∀ {n} {xs ys : Binary (suc n)} → (xs ≥ᵘ ys) → (xs ≡ ys) ⊎ (xs >ᵘ ys)
-    split-ge {_} {xs} {ys} geh with trichotomy xs ys
-    ... | tri-lt lth = ⊥-elim (geh lth)
-    ... | tri-eq eqh = inj₁ eqh
-    ... | tri-gt gth = inj₂ gth
-
-    contra-comp : ys ≡ (~ xs) → ⊥
-    contra-comp h = let
-        oh = subst (λ l → (xs ∥ l) <ᵘ (rca xs l true)) h lth
-        oh = subst (_<ᵘ (rca xs (~ xs) true)) (∥-inverseʳ xs) oh
-        oh = subst (ones (suc n) <ᵘ_) (rca-carry-lift-inc xs (~ xs)) oh
-        oh = subst (λ l → ones (suc n) <ᵘ inc l) (~-+-ones xs) oh
-        oh = subst (λ l → ones (suc n) <ᵘ (O ∷ l)) (inc-ones≡zero) oh
-      in
-        ones-≥ᵘ-zero oh
-
-    helper : (ys ≡ (~ xs)) ⊎ (ys >ᵘ (~ xs)) → ⊥
-    helper (inj₁ eq)  = contra-comp eq
-    helper (inj₂ ovf) = contra-ovf ovf lth
-
 ∥-gt-+ : ∀ {n} {xs ys : Binary (suc n)} → AddOverflow xs ys → (xs ∥ ys) >ᵘ (xs + ys)
-∥-gt-+ {zero} {O ∷ []} {O ∷ []} oh _ = oh (inj₁ (lt-head refl lt))
-∥-gt-+ {zero} {I ∷ []} {O ∷ []} oh _ = oh (inj₂ refl)
-∥-gt-+ {zero} {O ∷ []} {I ∷ []} oh _ = oh (inj₂ refl)
-∥-gt-+ {zero} {I ∷ []} {I ∷ []} oh h = oh h
+∥-gt-+ {ℕ.zero} {O ∷ []} {O ∷ []} oh _ = oh (inj₁ (lt-head refl lt))
+∥-gt-+ {ℕ.zero} {I ∷ []} {O ∷ []} oh _ = oh (inj₂ refl)
+∥-gt-+ {ℕ.zero} {O ∷ []} {I ∷ []} oh _ = oh (inj₂ refl)
+∥-gt-+ {ℕ.zero} {I ∷ []} {I ∷ []} oh h = oh h
 ∥-gt-+ {suc n} {O ∷ xs} {O ∷ ys} oh h =
   let
     ih = ∥-gt-+ (>ᵘ-cons-general oh)
@@ -257,10 +274,29 @@ lemma-contra {n} {xs} {ys} geh lth =
     ih hh
 ∥-gt-+ {suc n} {I ∷ xs} {I ∷ ys} oh h with h
 ... | (inj₁ (lt-tail lth)) = let
-    hh = ≤ᵘ-cons-general h
     kh = >ᵘ-cons-general-weak oh
   in
     lemma-contra kh lth
+  where
+    contra-comp : ys ≡ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys true) → ⊥
+    contra-comp h lth rewrite h 
+                      | ∥-inverseʳ xs 
+                      | rca-carry-lift-inc xs (~ xs) 
+                      | ~-+-ones xs 
+                      | inc-ones≡zero {suc n} 
+                      = ones-≥ᵘ-zero lth
+
+    contra-ovf : ys >ᵘ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys true) → ⊥
+    contra-ovf h lth rewrite rca-carry-lift-inc xs ys =
+      inc-absurd (>ᵘ-to-<ᵘ (∥-gt-+ h)) lth
+
+    lemma-contra : ys ≥ᵘ (~ xs)
+                 → (xs ∥ ys) <ᵘ (rca xs ys true)
+                 → ⊥
+    lemma-contra geh lth with split-≥ᵘ geh
+    ... | inj₁ eq = contra-comp eq lth
+    ... | inj₂ ovf = contra-ovf ovf lth
+
 ... | (inj₁ (lt-head a ()))
 ... | (inj₂ eq) = let
     eqh = cong (Data.Vec.head) eq
