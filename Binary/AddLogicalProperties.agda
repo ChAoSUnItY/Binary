@@ -1,4 +1,4 @@
-module Bin.AddLogicalProperties where
+module Binary.AddLogicalProperties where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
@@ -9,9 +9,9 @@ open import Data.Nat using (ℕ; suc)
 open import Data.Bool using (_∧_; _∨_; not; _xor_)
 open import Data.Bool.Properties
 open import Function.Base
-open import Bin.Base
-open import Bin.Properties
-open import Bin.AddProperties
+open import Binary.Base
+open import Binary.Properties
+open import Binary.AddProperties
 
 nneg≡~-dec : ∀ {n} (xs : Binary n) → - xs ≡ ~ (dec xs)
 nneg≡~-dec [] = refl

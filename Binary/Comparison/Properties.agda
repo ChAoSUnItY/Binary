@@ -1,4 +1,4 @@
-module Bin.Comparison.Properties where
+module Binary.Comparison.Properties where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
@@ -6,10 +6,10 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Nat using (ℕ; suc)
 open import Data.Vec using (Vec; _∷_; [])
-open import Bin.Base
-open import Bin.Comparison.Base
-open import Bin.Properties
-open import Bin.AddProperties
+open import Binary.Base
+open import Binary.Comparison.Base
+open import Binary.Properties
+open import Binary.AddProperties
 
 -- Basic properties
 -- lt
@@ -157,11 +157,11 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
 >ᵘ-to-<ᵘ {suc n} {I ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
 
 -- Common facts
-ones-≥ᵘ-zero : ∀ {n} → ones n ≥ᵘ Bin.Base.zero n
+ones-≥ᵘ-zero : ∀ {n} → ones n ≥ᵘ Binary.Base.zero n
 ones-≥ᵘ-zero {ℕ.zero} ()
 ones-≥ᵘ-zero {suc n} lth = ones-≥ᵘ-zero (<ᵘ-cons-general lth)
 
-zero-≤ᵘ-all : ∀ {n} (xs : Binary (suc n)) → Bin.Base.zero (suc n) ≤ᵘ xs
+zero-≤ᵘ-all : ∀ {n} (xs : Binary (suc n)) → Binary.Base.zero (suc n) ≤ᵘ xs
 zero-≤ᵘ-all {ℕ.zero} (O ∷ []) = inj₂ refl
 zero-≤ᵘ-all {ℕ.zero} (I ∷ []) = inj₁ (lt-head refl lt)
 zero-≤ᵘ-all {suc n} (O ∷ xs) = ≤ᵘ-cons-general' (zero-≤ᵘ-all xs)

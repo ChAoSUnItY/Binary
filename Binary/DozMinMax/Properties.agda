@@ -1,15 +1,15 @@
-module Bin.DozMinMax.Properties where
+module Binary.DozMinMax.Properties where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; suc)
 open import Data.Vec using (Vec; _∷_; [])
-open import Bin.Base
-open import Bin.Comparison.Base
-open import Bin.Comparison.Properties
-open import Bin.DozMinMax.Base
-open import Bin.AddProperties
+open import Binary.Base
+open import Binary.Comparison.Base
+open import Binary.Comparison.Properties
+open import Binary.DozMinMax.Base
+open import Binary.AddProperties
 
 dozᵘ-⌊⌋ : ∀ {n} (xs ys : Binary (suc n)) → zero (suc n) ≤ᵘ dozᵘ xs ys
 dozᵘ-⌊⌋ {n} xs ys with trichotomy xs ys

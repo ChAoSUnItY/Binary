@@ -1,4 +1,4 @@
-module Bin.Base where
+module Binary.Base where
 
 open import Data.Nat using (ℕ; suc)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)

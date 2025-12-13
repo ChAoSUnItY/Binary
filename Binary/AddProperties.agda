@@ -1,4 +1,4 @@
-module Bin.AddProperties where
+module Binary.AddProperties where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
@@ -10,8 +10,8 @@ open import Data.Bool using (_∧_; _∨_; not; _xor_)
 open import Data.Bool.Properties
 open import Function
 open import Tactic.Cong
-open import Bin.Base
-open import Bin.Properties
+open import Binary.Base
+open import Binary.Properties
 
 -- Basic RCA theorems
 rca-no-carry : ∀ {n} (x y : Bit) (xs ys : Binary n) → rca (x ∷ xs) (y ∷ ys) O ≡ (x xor y) ∷ rca xs ys (x ∧ y)

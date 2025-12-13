@@ -1,4 +1,4 @@
-module Bin.Properties where
+module Binary.Properties where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
@@ -9,7 +9,7 @@ open import Data.Nat using (ℕ; suc)
 open import Data.Bool using (_∧_; _∨_; not; _xor_)
 open import Data.Bool.Properties
 open import Function.Base
-open import Bin.Base
+open import Binary.Base
 
 -- Base definition
 cons-inj : ∀ {n} {x y : Bit} {xs ys : Binary n} → (x ∷ xs) ≡ (y ∷ ys) → xs ≡ ys

@@ -1,10 +1,10 @@
-module Bin.DozMinMax.Base where
+module Binary.DozMinMax.Base where
 
 open import Data.Nat using (ℕ; suc)
 open import Data.Vec using (Vec; _∷_; [])
-open import Bin.Base
-open import Bin.Comparison.Base
-open import Bin.Comparison.Properties
+open import Binary.Base
+open import Binary.Comparison.Base
+open import Binary.Comparison.Properties
 
 dozᵘ : ∀ {n} (xs ys : Binary (suc n)) → Binary (suc n)
 dozᵘ {n} xs ys with trichotomy xs ys
