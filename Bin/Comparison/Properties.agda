@@ -5,7 +5,6 @@ open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Nat using (ℕ; suc)
-open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
 open import Data.Vec using (Vec; _∷_; [])
 open import Bin.Base
 open import Bin.Comparison.Base
@@ -31,11 +30,12 @@ open import Bin.AddProperties
 <ᵘ-trans {suc n} (lt-head _ lt) (lt-head _ ())
 
 <ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary n} 
-                {{_ : y <bᵘ x}}
+                {{_ : y ≤bᵘ x}}
                 → (x ∷ xs) <ᵘ (y ∷ ys) 
                 → xs <ᵘ ys
-<ᵘ-cons-general {{lt}} (lt-tail h) = h
-<ᵘ-cons-general {{lt}} (lt-head _ ())
+<ᵘ-cons-general {{_}} (lt-tail h) = h
+<ᵘ-cons-general {{inj₁ ()}} (lt-head refl lt)
+<ᵘ-cons-general {{inj₂ ()}} (lt-head refl lt)
 
 -- trichotomy
 data Trichotomy {n} (xs ys : Binary (suc n)) : Set where
@@ -134,6 +134,10 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
 ≤ᵘ-<ᵘ-trans {suc n} (inj₁ x<y) y<z = <ᵘ-trans x<y y<z
 ≤ᵘ-<ᵘ-trans (inj₂ refl) y<z = y<z
 
+<ᵘ-≤ᵘ-trans : ∀ {n} {xs ys zs : Binary (suc n)} → xs <ᵘ ys → ys ≤ᵘ zs → xs <ᵘ zs
+<ᵘ-≤ᵘ-trans x<y (inj₁ y<z) = <ᵘ-trans x<y y<z
+<ᵘ-≤ᵘ-trans x<y (inj₂ refl) = x<y
+
 -- Conversion
 >ᵘ-to-<ᵘ : ∀ {n} {xs ys : Binary (suc n)} → xs >ᵘ ys → ys <ᵘ xs
 >ᵘ-to-<ᵘ {ℕ.zero} {O ∷ []} {O ∷ []} gth = ⊥-elim (gth (inj₂ refl))
@@ -156,6 +160,95 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
 ones-≥ᵘ-zero : ∀ {n} → ones n ≥ᵘ Bin.Base.zero n
 ones-≥ᵘ-zero {ℕ.zero} ()
 ones-≥ᵘ-zero {suc n} lth = ones-≥ᵘ-zero (<ᵘ-cons-general lth)
+
+zero-≤ᵘ-all : ∀ {n} (xs : Binary (suc n)) → Bin.Base.zero (suc n) ≤ᵘ xs
+zero-≤ᵘ-all {ℕ.zero} (O ∷ []) = inj₂ refl
+zero-≤ᵘ-all {ℕ.zero} (I ∷ []) = inj₁ (lt-head refl lt)
+zero-≤ᵘ-all {suc n} (O ∷ xs) = ≤ᵘ-cons-general' (zero-≤ᵘ-all xs)
+zero-≤ᵘ-all {suc n} (I ∷ xs) = ≤ᵘ-cons-general' (zero-≤ᵘ-all xs)
+
+dec-lt : ∀ {n} {xs : Binary (suc n)} → zero (suc n) <ᵘ xs → dec xs <ᵘ xs
+dec-lt {ℕ.zero} {O ∷ []} (lt-tail ())
+dec-lt {ℕ.zero} {O ∷ []} (lt-head _ ())
+dec-lt {ℕ.zero} {I ∷ []} _ = lt-head refl lt
+dec-lt {suc n} {O ∷ xs} (lt-tail h) = lt-tail (dec-lt h)
+dec-lt {suc n} {O ∷ xs} (lt-head refl ())
+dec-lt {suc n} {I ∷ xs} _ = lt-head refl lt
+
+sub->ᵘ-zero : ∀ {n} {xs ys : Binary (suc n)} → xs >ᵘ ys → (xs - ys) >ᵘ zero (suc n)
+sub->ᵘ-zero {ℕ.zero} {O ∷ []} {O ∷ []} xs>ys _ = xs>ys (inj₂ refl)
+sub->ᵘ-zero {ℕ.zero} {O ∷ []} {I ∷ []} xs>ys _ = xs>ys (inj₁ (lt-head refl lt))
+sub->ᵘ-zero {ℕ.zero} {I ∷ []} {O ∷ []} xs>ys = xs>ys
+sub->ᵘ-zero {ℕ.zero} {I ∷ []} {I ∷ []} xs>ys _ = xs>ys (inj₂ refl)
+sub->ᵘ-zero {suc n} {O ∷ xs} {O ∷ ys} xs>ys (inj₁ (lt-tail lth)) = sub->ᵘ-zero (>ᵘ-cons-general xs>ys) (inj₁ lth)
+sub->ᵘ-zero {suc n} {O ∷ xs} {O ∷ ys} xs>ys (inj₁ (lt-head _ ()))
+sub->ᵘ-zero {suc n} {O ∷ xs} {O ∷ ys} xs>ys (inj₂ eq) = sub->ᵘ-zero (>ᵘ-cons-general xs>ys) (inj₂ (cong Data.Vec.tail eq))
+sub->ᵘ-zero {suc n} {O ∷ xs} {I ∷ ys} xs>ys (inj₁ (lt-tail lth)) = <ᵘ-irrefl (<ᵘ-≤ᵘ-trans lth (zero-≤ᵘ-all _))
+sub->ᵘ-zero {suc n} {O ∷ xs} {I ∷ ys} xs>ys (inj₁ (lt-head _ ()))
+sub->ᵘ-zero {suc n} {O ∷ xs} {I ∷ ys} xs>ys (inj₂ ())
+sub->ᵘ-zero {suc n} {I ∷ xs} {O ∷ ys} xs>ys (inj₁ (lt-tail lth)) = <ᵘ-irrefl (<ᵘ-≤ᵘ-trans lth (zero-≤ᵘ-all _))
+sub->ᵘ-zero {suc n} {I ∷ xs} {O ∷ ys} xs>ys (inj₁ (lt-head _ ()))
+sub->ᵘ-zero {suc n} {I ∷ xs} {O ∷ ys} xs>ys (inj₂ ())
+sub->ᵘ-zero {suc n} {I ∷ xs} {I ∷ ys} xs>ys h rewrite rca-carry-transpose-incʳ xs (~ ys) with h
+... | inj₁ (lt-tail lth) = sub->ᵘ-zero (>ᵘ-cons-general xs>ys) (inj₁ lth)
+... | inj₁ (lt-head _ ())
+... | inj₂ eq = sub->ᵘ-zero (>ᵘ-cons-general xs>ys) (inj₂ (cong Data.Vec.tail eq))
+
+sub-<ᵘ-self : ∀ {n} {xs ys : Binary (suc n)} → xs >ᵘ ys → (xs - ys) ≤ᵘ xs
+sub-<ᵘ-self {ℕ.zero} {O ∷ []} {O ∷ []} xs>ys = ⊥-elim (xs>ys (inj₂ refl))
+sub-<ᵘ-self {ℕ.zero} {O ∷ []} {I ∷ []} xs>ys = ⊥-elim (xs>ys (inj₁ (lt-head refl lt)))
+sub-<ᵘ-self {ℕ.zero} {I ∷ []} {O ∷ []} xs>ys = inj₂ refl
+sub-<ᵘ-self {ℕ.zero} {I ∷ []} {I ∷ []} xs>ys = ⊥-elim (xs>ys (inj₂ refl))
+sub-<ᵘ-self {suc n} {O ∷ xs} {O ∷ ys} xs>ys = ≤ᵘ-cons-general' (sub-<ᵘ-self (>ᵘ-cons-general xs>ys))
+sub-<ᵘ-self {suc n} {I ∷ xs} {O ∷ ys} xs>ys with split-≥ᵘ (>ᵘ-cons-general-weak xs>ys)
+... | inj₁ refl rewrite +-elimʳ xs = ≤ᵘ-cons-general' (zero-≤ᵘ-all xs)
+... | inj₂ gth = ≤ᵘ-cons-general' (sub-<ᵘ-self gth)
+sub-<ᵘ-self {suc n} {I ∷ xs} {I ∷ ys} xs>ys rewrite rca-carry-lift-inc xs (~ ys) 
+                                                  | sym (rca-inc-liftʳ xs (~ ys) O) =
+    ≤ᵘ-cons-general' (sub-<ᵘ-self (>ᵘ-cons-general xs>ys))
+sub-<ᵘ-self {suc n} {O ∷ xs} {I ∷ ys} xs>ys rewrite sym (dec-inc-elim (rca xs (~ ys) O)) | sym (rca-inc-liftʳ xs (~ ys) O) =
+    let
+      tail-gth = >ᵘ-cons-general xs>ys
+      cons-lte = sub-<ᵘ-self tail-gth
+      0<diff = >ᵘ-to-<ᵘ (sub->ᵘ-zero tail-gth)
+      dec-d<d = dec-lt 0<diff
+    in
+      inj₁ (lt-tail (<ᵘ-≤ᵘ-trans dec-d<d cons-lte))
+
+-- Logical operation properties
+∥-≥ᵘ-left : ∀ {n} {xs ys : Binary n} → (xs ∥ ys) ≥ᵘ xs
+∥-≥ᵘ-left {ℕ.zero} {[]} {[]} ()
+∥-≥ᵘ-left {suc n} {x ∷ xs} {y ∷ ys} (lt-tail lth) = ∥-≥ᵘ-left lth
+∥-≥ᵘ-left {suc n} {O ∷ xs} {y ∷ ys} (lt-head _ ())
+∥-≥ᵘ-left {suc n} {I ∷ xs} {y ∷ ys} (lt-head _ ())
+
+∥-≥ᵘ-right : ∀ {n} {xs ys : Binary n} → (xs ∥ ys) ≥ᵘ ys
+∥-≥ᵘ-right {ℕ.zero} {[]} {[]} ()
+∥-≥ᵘ-right {suc n} {x ∷ xs} {y ∷ ys} (lt-tail lth) = ∥-≥ᵘ-right lth
+∥-≥ᵘ-right {suc n} {O ∷ xs} {y ∷ ys} (lt-head _ ())
+∥-≥ᵘ-right {suc n} {I ∷ xs} {y ∷ ys} (lt-head _ ())
+
+&-≤ᵘ-left : ∀ {n} {xs ys : Binary n} → (xs & ys) ≤ᵘ xs
+&-≤ᵘ-left {ℕ.zero} {[]} {[]} = inj₂ refl
+&-≤ᵘ-left {suc n} {O ∷ xs} {y ∷ ys} with &-≤ᵘ-left {n} {xs} {ys}
+... | inj₁ lth = inj₁ (lt-tail lth)
+... | inj₂ eq = inj₂ (cong (O ∷_) eq)
+&-≤ᵘ-left {suc n} {I ∷ xs} {y ∷ ys} with &-≤ᵘ-left {n} {xs} {ys}
+... | inj₁ lth = inj₁ (lt-tail lth)
+... | inj₂ eq with y
+...   | O = inj₁ (lt-head eq lt)
+...   | I = inj₂ (cong (I ∷_) eq)
+
+&-≤ᵘ-right : ∀ {n} {xs ys : Binary n} → (xs & ys) ≤ᵘ ys
+&-≤ᵘ-right {ℕ.zero} {[]} {[]} = inj₂ refl
+&-≤ᵘ-right {suc n} {O ∷ xs} {y ∷ ys} with &-≤ᵘ-right {n} {xs} {ys}
+... | inj₁ lth = inj₁ (lt-tail lth)
+... | inj₂ eq with y
+...   | O = inj₂ (cong (O ∷_) eq)
+...   | I = inj₁ (lt-head eq lt)
+&-≤ᵘ-right {suc n} {I ∷ xs} {y ∷ ys} with &-≤ᵘ-right {n} {xs} {ys}
+... | inj₁ lth = inj₁ (lt-tail lth)
+... | inj₂ eq = inj₂ (cong (y ∷_) eq)
 
 -- Logical operation combination properties
 ^-lte-∥ : ∀ {n} {xs ys : Binary (suc n)} → (xs ^ ys) ≤ᵘ (xs ∥ ys)
@@ -305,7 +398,7 @@ inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
   in
     lemma-contra kh lth
   where
-    contra-comp : ys ≡ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys true) → ⊥
+    contra-comp : ys ≡ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys I) → ⊥
     contra-comp h lth rewrite h 
                       | ∥-inverseʳ xs 
                       | rca-carry-lift-inc xs (~ xs) 
@@ -313,16 +406,16 @@ inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
                       | inc-ones≡zero {suc n} 
                       = ones-≥ᵘ-zero lth
 
-    contra-ovf : ys >ᵘ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys true) → ⊥
+    contra-ovf : ys >ᵘ (~ xs) → (xs ∥ ys) <ᵘ (rca xs ys I) → ⊥
     contra-ovf h lth rewrite rca-carry-lift-inc xs ys =
       inc-absurd (>ᵘ-to-<ᵘ (∥-gt-+ h)) lth
 
     lemma-contra : ys ≥ᵘ (~ xs)
-                 → (xs ∥ ys) <ᵘ (rca xs ys true)
+                 → (xs ∥ ys) <ᵘ (rca xs ys I)
                  → ⊥
     lemma-contra geh lth with split-≥ᵘ geh
     ... | inj₁ eq = contra-comp eq lth
     ... | inj₂ ovf = contra-ovf ovf lth
-
 ... | (inj₁ (lt-head a ()))
 ... | (inj₂ ())
+
