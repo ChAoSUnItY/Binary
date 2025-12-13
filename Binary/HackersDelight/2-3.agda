@@ -20,13 +20,9 @@ open import Binary.AddProperties
 
 -- Prerequisite theorems
 inc-absurd : ∀ {n} {xs ys : Binary (suc n)} → xs <ᵘ ys → ys <ᵘ inc xs → ⊥
-inc-absurd {ℕ.zero} {O ∷ []} {O ∷ []} (lt-tail ()) _
 inc-absurd {ℕ.zero} {O ∷ []} {O ∷ []} (lt-head _ ()) _
-inc-absurd {ℕ.zero} {O ∷ []} {I ∷ []} _ (lt-tail ())
 inc-absurd {ℕ.zero} {O ∷ []} {I ∷ []} _ (lt-head _ ())
-inc-absurd {ℕ.zero} {I ∷ []} {O ∷ []} (lt-tail ()) _
 inc-absurd {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ()) _
-inc-absurd {ℕ.zero} {I ∷ []} {I ∷ []} (lt-tail ()) _
 inc-absurd {ℕ.zero} {I ∷ []} {I ∷ []} (lt-head _ ()) _
 inc-absurd {suc n} {O ∷ xs} {O ∷ ys} (lt-tail xs<ys) (lt-tail ys<xs) = <ᵘ-asym xs<ys ys<xs
 inc-absurd {suc n} {O ∷ xs} {O ∷ ys} (lt-tail xs<ys) (lt-head refl lt) = <ᵘ-irrefl xs<ys
@@ -43,6 +39,32 @@ inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-head refl ())
 inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
 
 -- Actual theorems
+^-lte-∥ : ∀ {n} {xs ys : Binary (suc n)} → (xs ^ ys) ≤ᵘ (xs ∥ ys)
+^-lte-∥ {ℕ.zero} {x ∷ []} {y ∷ []} with x | y
+... | O | O = inj₂ refl
+... | I | O = inj₂ refl
+... | O | I = inj₂ refl
+... | I | I = inj₁ (lt-head refl lt)
+^-lte-∥ {suc n} {x ∷ xs} {y ∷ ys} with ^-lte-∥ {n} {xs} {ys} | x | y
+... | inj₁ h1 | _ | _ = inj₁ (lt-tail h1)
+... | inj₂ eq | O | O = inj₂ (cong (O ∷_) eq)
+... | inj₂ eq | I | O = inj₂ (cong (I ∷_) eq)
+... | inj₂ eq | O | I = inj₂ (cong (I ∷_) eq)
+... | inj₂ eq | I | I = inj₁ (lt-head eq lt)
+
+&-lte-== : ∀ {n} {xs ys : Binary (suc n)} → (xs & ys) ≤ᵘ (xs == ys)
+&-lte-== {ℕ.zero} {x ∷ []} {y ∷ []} with x | y
+... | O | O = inj₁ (lt-head refl lt)
+... | I | O = inj₂ refl
+... | O | I = inj₂ refl
+... | I | I = inj₂ refl
+&-lte-== {suc n} {x ∷ xs} {y ∷ ys} with &-lte-== {n} {xs} {ys} | x | y
+... | inj₁ h1 | _ | _ = inj₁ (lt-tail h1)
+... | inj₂ eq | O | O = inj₁ (lt-head eq lt)
+... | inj₂ eq | I | O = inj₂ (cong (O ∷_) eq)
+... | inj₂ eq | O | I = inj₂ (cong (O ∷_) eq)
+... | inj₂ eq | I | I = inj₂ (cong (I ∷_) eq)
+
 ∥-≥ᵘ-maxᵘ : ∀ {n} (xs ys : Binary (suc n)) → (xs ∥ ys) ≥ᵘ maxᵘ xs ys
 ∥-≥ᵘ-maxᵘ xs ys with trichotomy xs ys
 ... | tri-lt _ = ∥-≥ᵘ-right

@@ -29,7 +29,7 @@ open import Binary.AddProperties
 <ᵘ-trans {suc n} (lt-head refl _) (lt-tail y<z) = lt-tail y<z
 <ᵘ-trans {suc n} (lt-head _ lt) (lt-head _ ())
 
-<ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary n} 
+<ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)} 
                 {{_ : y ≤bᵘ x}}
                 → (x ∷ xs) <ᵘ (y ∷ ys) 
                 → xs <ᵘ ys
@@ -47,8 +47,7 @@ trichotomy : ∀ {n} (xs ys : Binary (suc n)) → Trichotomy xs ys
 trichotomy {ℕ.zero} (x ∷ []) (y ∷ []) with x | y
 ... | O | O = tri-eq refl
 ... | O | I = tri-lt (lt-head refl lt)
-... | I | O = tri-gt (λ { (inj₁ (lt-tail ()))
-                        ; (inj₁ (lt-head refl ()))
+... | I | O = tri-gt (λ { (inj₁ (lt-head refl ()))
                         ; (inj₂ ()) })
 ... | I | I = tri-eq refl
 trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
@@ -80,13 +79,13 @@ trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
 ≤ᵘ-antisym _ (inj₂ refl) = refl
 ≤ᵘ-antisym (inj₁ x<y) (inj₁ y<x) = ⊥-elim (<ᵘ-asym x<y y<x)
 
-≤ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary n} → (x ∷ xs) ≤ᵘ (y ∷ ys) → xs ≤ᵘ ys
+≤ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)} → (x ∷ xs) ≤ᵘ (y ∷ ys) → xs ≤ᵘ ys
 ≤ᵘ-cons-general (inj₁ lth) with lth
 ... | lt-tail h = inj₁ h
 ... | lt-head refl _  = inj₂ refl
 ≤ᵘ-cons-general (inj₂ refl) = inj₂ refl
 
-≤ᵘ-cons-general-strict : ∀ {n} {x y : Bit} {xs ys : Binary n}
+≤ᵘ-cons-general-strict : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)}
                        {{_ : y <bᵘ x}}
                        → (x ∷ xs) ≤ᵘ (y ∷ ys)
                        → xs <ᵘ ys
@@ -94,7 +93,7 @@ trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
 ≤ᵘ-cons-general-strict {{lt}} (inj₁ (lt-head refl ()))
 ≤ᵘ-cons-general-strict {{lt}} (inj₂ ())
 
-≤ᵘ-cons-general' : ∀ {n} {x y : Bit} {xs ys : Binary n}
+≤ᵘ-cons-general' : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)}
                  {{x≤y : x ≤bᵘ y}}
                  → xs ≤ᵘ ys 
                  → (x ∷ xs) ≤ᵘ (y ∷ ys)
@@ -104,19 +103,19 @@ trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
 ... | inj₂ refl = inj₂ refl
 
 -- gt
->ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary n} 
+>ᵘ-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)} 
                 {{_ : x ≤bᵘ y}}
                 → (x ∷ xs) >ᵘ (y ∷ ys)
                 → xs >ᵘ ys
 >ᵘ-cons-general {{inj₁ lt}} gth tail-leh = gth (≤ᵘ-cons-general' tail-leh)
 >ᵘ-cons-general {{x≤y}} gth tail-leh = gth (≤ᵘ-cons-general' {{x≤y}} tail-leh)
 
->ᵘ-cons-general-weak : ∀ {n} {x y : Bit} {xs ys : Binary n}
+>ᵘ-cons-general-weak : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)}
                        → (x ∷ xs) >ᵘ (y ∷ ys)
                        → xs ≥ᵘ ys
 >ᵘ-cons-general-weak gth tail-lth = gth (inj₁ (lt-tail tail-lth))
 
->ᵘ-cons-general' : ∀ {n} {x y : Bit} {xs ys : Binary n}
+>ᵘ-cons-general' : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)}
                  {{x>y : x >bᵘ y}}
                  → xs >ᵘ ys
                  → (x ∷ xs) >ᵘ (y ∷ ys)
@@ -130,8 +129,8 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
 ... | tri-gt gth = inj₂ gth
 
 -- Mixed
-≤ᵘ-<ᵘ-trans : ∀ {n} {xs ys zs : Binary n} → xs ≤ᵘ ys → ys <ᵘ zs → xs <ᵘ zs
-≤ᵘ-<ᵘ-trans {suc n} (inj₁ x<y) y<z = <ᵘ-trans x<y y<z
+≤ᵘ-<ᵘ-trans : ∀ {n} {xs ys zs : Binary (suc n)} → xs ≤ᵘ ys → ys <ᵘ zs → xs <ᵘ zs
+≤ᵘ-<ᵘ-trans (inj₁ x<y) y<z = <ᵘ-trans x<y y<z
 ≤ᵘ-<ᵘ-trans (inj₂ refl) y<z = y<z
 
 <ᵘ-≤ᵘ-trans : ∀ {n} {xs ys zs : Binary (suc n)} → xs <ᵘ ys → ys ≤ᵘ zs → xs <ᵘ zs
@@ -157,8 +156,8 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
 >ᵘ-to-<ᵘ {suc n} {I ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
 
 -- Common facts
-ones-≥ᵘ-zero : ∀ {n} → ones n ≥ᵘ Binary.Base.zero n
-ones-≥ᵘ-zero {ℕ.zero} ()
+ones-≥ᵘ-zero : ∀ {n} → ones (suc n) ≥ᵘ Binary.Base.zero (suc n)
+ones-≥ᵘ-zero {ℕ.zero} (lt-head _ ())
 ones-≥ᵘ-zero {suc n} lth = ones-≥ᵘ-zero (<ᵘ-cons-general lth)
 
 zero-≤ᵘ-all : ∀ {n} (xs : Binary (suc n)) → Binary.Base.zero (suc n) ≤ᵘ xs
@@ -168,7 +167,6 @@ zero-≤ᵘ-all {suc n} (O ∷ xs) = ≤ᵘ-cons-general' (zero-≤ᵘ-all xs)
 zero-≤ᵘ-all {suc n} (I ∷ xs) = ≤ᵘ-cons-general' (zero-≤ᵘ-all xs)
 
 dec-lt : ∀ {n} {xs : Binary (suc n)} → zero (suc n) <ᵘ xs → dec xs <ᵘ xs
-dec-lt {ℕ.zero} {O ∷ []} (lt-tail ())
 dec-lt {ℕ.zero} {O ∷ []} (lt-head _ ())
 dec-lt {ℕ.zero} {I ∷ []} _ = lt-head refl lt
 dec-lt {suc n} {O ∷ xs} (lt-tail h) = lt-tail (dec-lt h)
@@ -216,20 +214,29 @@ sub-<ᵘ-self {suc n} {O ∷ xs} {I ∷ ys} xs>ys rewrite sym (dec-inc-elim (rca
       inj₁ (lt-tail (<ᵘ-≤ᵘ-trans dec-d<d cons-lte))
 
 -- Logical operation properties
-∥-≥ᵘ-left : ∀ {n} {xs ys : Binary n} → (xs ∥ ys) ≥ᵘ xs
-∥-≥ᵘ-left {ℕ.zero} {[]} {[]} ()
+∥-≥ᵘ-left : ∀ {n} {xs ys : Binary (suc n)} → (xs ∥ ys) ≥ᵘ xs
+∥-≥ᵘ-left {ℕ.zero} {O ∷ []} {O ∷ []} (lt-head _ ())
+∥-≥ᵘ-left {ℕ.zero} {O ∷ []} {I ∷ []} (lt-head _ ())
+∥-≥ᵘ-left {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ())
+∥-≥ᵘ-left {ℕ.zero} {I ∷ []} {I ∷ []} (lt-head _ ())
 ∥-≥ᵘ-left {suc n} {x ∷ xs} {y ∷ ys} (lt-tail lth) = ∥-≥ᵘ-left lth
 ∥-≥ᵘ-left {suc n} {O ∷ xs} {y ∷ ys} (lt-head _ ())
 ∥-≥ᵘ-left {suc n} {I ∷ xs} {y ∷ ys} (lt-head _ ())
 
-∥-≥ᵘ-right : ∀ {n} {xs ys : Binary n} → (xs ∥ ys) ≥ᵘ ys
-∥-≥ᵘ-right {ℕ.zero} {[]} {[]} ()
+∥-≥ᵘ-right : ∀ {n} {xs ys : Binary (suc n)} → (xs ∥ ys) ≥ᵘ ys
+∥-≥ᵘ-right {ℕ.zero} {O ∷ []} {O ∷ []} (lt-head _ ())
+∥-≥ᵘ-right {ℕ.zero} {O ∷ []} {I ∷ []} (lt-head _ ())
+∥-≥ᵘ-right {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ())
+∥-≥ᵘ-right {ℕ.zero} {I ∷ []} {I ∷ []} (lt-head _ ())
 ∥-≥ᵘ-right {suc n} {x ∷ xs} {y ∷ ys} (lt-tail lth) = ∥-≥ᵘ-right lth
 ∥-≥ᵘ-right {suc n} {O ∷ xs} {y ∷ ys} (lt-head _ ())
 ∥-≥ᵘ-right {suc n} {I ∷ xs} {y ∷ ys} (lt-head _ ())
 
-&-≤ᵘ-left : ∀ {n} {xs ys : Binary n} → (xs & ys) ≤ᵘ xs
-&-≤ᵘ-left {ℕ.zero} {[]} {[]} = inj₂ refl
+&-≤ᵘ-left : ∀ {n} {xs ys : Binary (suc n)} → (xs & ys) ≤ᵘ xs
+&-≤ᵘ-left {ℕ.zero} {O ∷ []} {O ∷ []} = inj₂ refl
+&-≤ᵘ-left {ℕ.zero} {O ∷ []} {I ∷ []} = inj₂ refl
+&-≤ᵘ-left {ℕ.zero} {I ∷ []} {O ∷ []} = inj₁ (lt-head refl lt)
+&-≤ᵘ-left {ℕ.zero} {I ∷ []} {I ∷ []} = inj₂ refl
 &-≤ᵘ-left {suc n} {O ∷ xs} {y ∷ ys} with &-≤ᵘ-left {n} {xs} {ys}
 ... | inj₁ lth = inj₁ (lt-tail lth)
 ... | inj₂ eq = inj₂ (cong (O ∷_) eq)
@@ -239,8 +246,11 @@ sub-<ᵘ-self {suc n} {O ∷ xs} {I ∷ ys} xs>ys rewrite sym (dec-inc-elim (rca
 ...   | O = inj₁ (lt-head eq lt)
 ...   | I = inj₂ (cong (I ∷_) eq)
 
-&-≤ᵘ-right : ∀ {n} {xs ys : Binary n} → (xs & ys) ≤ᵘ ys
-&-≤ᵘ-right {ℕ.zero} {[]} {[]} = inj₂ refl
+&-≤ᵘ-right : ∀ {n} {xs ys : Binary (suc n)} → (xs & ys) ≤ᵘ ys
+&-≤ᵘ-right {ℕ.zero} {O ∷ []} {O ∷ []} = inj₂ refl
+&-≤ᵘ-right {ℕ.zero} {O ∷ []} {I ∷ []} = inj₁ (lt-head refl lt)
+&-≤ᵘ-right {ℕ.zero} {I ∷ []} {O ∷ []} = inj₂ refl
+&-≤ᵘ-right {ℕ.zero} {I ∷ []} {I ∷ []} = inj₂ refl
 &-≤ᵘ-right {suc n} {O ∷ xs} {y ∷ ys} with &-≤ᵘ-right {n} {xs} {ys}
 ... | inj₁ lth = inj₁ (lt-tail lth)
 ... | inj₂ eq with y
@@ -250,38 +260,9 @@ sub-<ᵘ-self {suc n} {O ∷ xs} {I ∷ ys} xs>ys rewrite sym (dec-inc-elim (rca
 ... | inj₁ lth = inj₁ (lt-tail lth)
 ... | inj₂ eq = inj₂ (cong (y ∷_) eq)
 
--- Logical operation combination properties
-^-lte-∥ : ∀ {n} {xs ys : Binary (suc n)} → (xs ^ ys) ≤ᵘ (xs ∥ ys)
-^-lte-∥ {ℕ.zero} {x ∷ []} {y ∷ []} with x | y
-... | O | O = inj₂ refl
-... | I | O = inj₂ refl
-... | O | I = inj₂ refl
-... | I | I = inj₁ (lt-head refl lt)
-^-lte-∥ {suc n} {x ∷ xs} {y ∷ ys} with ^-lte-∥ {n} {xs} {ys} | x | y
-... | inj₁ h1 | _ | _ = inj₁ (lt-tail h1)
-... | inj₂ eq | O | O = inj₂ (cong (O ∷_) eq)
-... | inj₂ eq | I | O = inj₂ (cong (I ∷_) eq)
-... | inj₂ eq | O | I = inj₂ (cong (I ∷_) eq)
-... | inj₂ eq | I | I = inj₁ (lt-head eq lt)
-
-&-lte-== : ∀ {n} {xs ys : Binary (suc n)} → (xs & ys) ≤ᵘ (xs == ys)
-&-lte-== {ℕ.zero} {x ∷ []} {y ∷ []} with x | y
-... | O | O = inj₁ (lt-head refl lt)
-... | I | O = inj₂ refl
-... | O | I = inj₂ refl
-... | I | I = inj₂ refl
-&-lte-== {suc n} {x ∷ xs} {y ∷ ys} with &-lte-== {n} {xs} {ys} | x | y
-... | inj₁ h1 | _ | _ = inj₁ (lt-tail h1)
-... | inj₂ eq | O | O = inj₁ (lt-head eq lt)
-... | inj₂ eq | I | O = inj₂ (cong (O ∷_) eq)
-... | inj₂ eq | O | I = inj₂ (cong (O ∷_) eq)
-... | inj₂ eq | I | I = inj₂ (cong (I ∷_) eq)
-
 +-<ᵘ-inc : ∀ {n} {xs ys : Binary (suc n)} → AddNotMax xs ys → (xs + ys) <ᵘ inc (xs + ys)
 +-<ᵘ-inc {ℕ.zero} {O ∷ []} {O ∷ []} snoh = snoh
-+-<ᵘ-inc {ℕ.zero} {I ∷ []} {O ∷ []} (lt-tail ())
 +-<ᵘ-inc {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ())
-+-<ᵘ-inc {ℕ.zero} {O ∷ []} {I ∷ []} (lt-tail ())
 +-<ᵘ-inc {ℕ.zero} {O ∷ []} {I ∷ []} (lt-head _ ())
 +-<ᵘ-inc {ℕ.zero} {I ∷ []} {I ∷ []} snoh = lt-head refl lt
 +-<ᵘ-inc {suc n} {O ∷ xs} {O ∷ ys} snoh = lt-head refl lt
@@ -302,8 +283,7 @@ inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
 
 +-no-overflow : ∀ {n} {xs ys : Binary (suc n)} → AddNotMax xs ys → (xs + ys) <ᵘ ones (suc n)
 +-no-overflow {ℕ.zero} {O ∷ []} {O ∷ []} snoh = snoh
-+-no-overflow {ℕ.zero} {I ∷ []} {O ∷ []} (lt-tail ())
-+-no-overflow {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head refl ())
++-no-overflow {ℕ.zero} {I ∷ []} {O ∷ []} (lt-head _ ())
 +-no-overflow {ℕ.zero} {O ∷ []} {I ∷ []} snoh = snoh
 +-no-overflow {ℕ.zero} {I ∷ []} {I ∷ []} snoh = lt-head refl lt
 +-no-overflow {suc n} {O ∷ xs} {O ∷ ys} (lt-tail lth) = lt-tail (+-no-overflow lth)

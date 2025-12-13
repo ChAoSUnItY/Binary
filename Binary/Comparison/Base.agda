@@ -3,11 +3,14 @@ module Binary.Comparison.Base where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl)
 open import Relation.Nullary using (¬_)
+open import Data.Unit using (⊤)
+open import Data.Empty using (⊥)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; suc)
-open import Data.Vec using (Vec; _∷_; [])
+open import Data.Vec using (Vec; _∷_; []; last)
 open import Binary.Base
 
+-- Bit comparison
 data _<bᵘ_ : Bit → Bit → Set where
   lt : O <bᵘ I
 
@@ -36,8 +39,9 @@ instance
   inst-le-OI : O ≤bᵘ I
   inst-le-OI = inj₁ lt
 
-data _<ᵘ_ : ∀ {n} → Binary n → Binary n → Set where
-  lt-tail : ∀ {n} {x y : Bit} {xs ys : Binary n}
+-- Unsigned comparison
+data _<ᵘ_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set where
+  lt-tail : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)}
           → xs <ᵘ ys 
           → (x ∷ xs) <ᵘ (y ∷ ys)
   lt-head : ∀ {n} {x y : Bit} {xs ys : Binary n}
@@ -45,20 +49,40 @@ data _<ᵘ_ : ∀ {n} → Binary n → Binary n → Set where
           → x <bᵘ y 
           → (x ∷ xs) <ᵘ (y ∷ ys)
 
-_≤ᵘ_ : ∀ {n} → Binary n → Binary n → Set
+_≤ᵘ_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 xs ≤ᵘ ys = (xs <ᵘ ys) ⊎ (xs ≡ ys)  
 
-_>ᵘ_ : ∀ {n} → Binary n → Binary n → Set
+_>ᵘ_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 xs >ᵘ ys = ¬(xs ≤ᵘ ys)
 
-_≥ᵘ_ : ∀ {n} → Binary n → Binary n → Set
+_≥ᵘ_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 xs ≥ᵘ ys = ¬(xs <ᵘ ys)
 
-AddNotOverflow : ∀ {n} → Binary n → Binary n → Set
+AddNotOverflow : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 AddNotOverflow xs ys = ys ≤ᵘ (~ xs)
 
-AddOverflow : ∀ {n} → Binary n → Binary n → Set
+AddOverflow : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 AddOverflow xs ys = ys >ᵘ (~ xs)
 
-AddNotMax : ∀ {n} → Binary n → Binary n → Set
+AddNotMax : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 AddNotMax xs ys = ys <ᵘ (~ xs)
+
+-- Signed comparison
+signBit : ∀ {n} → Binary (suc n) → Bit
+signBit = last
+
+_<_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
+xs < ys with signBit xs | signBit ys
+... | I | O = ⊤
+... | O | I = ⊥
+... | _ | _ = xs <ᵘ ys
+
+_≤_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
+xs ≤ ys = xs < ys ⊎ xs ≡ ys
+
+_>_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
+xs > ys = ¬(xs ≤ ys)
+
+_≥_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
+xs ≥ ys = ¬(xs < ys)
+
