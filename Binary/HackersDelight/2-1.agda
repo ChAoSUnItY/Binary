@@ -1,4 +1,4 @@
-module Binary.DeMorgansLawExtendedProperties where
+module Binary.HackersDelight.2-1 where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)

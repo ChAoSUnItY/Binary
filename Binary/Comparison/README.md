@@ -1,3 +1,3 @@
-# Bin.Comparison
+# Binary.Comparison
 
 This folder contains definitions and proofs of comparison operations.

@@ -1,4 +1,4 @@
-module Binary.AddLogicalProperties where
+module Binary.HackersDelight.2-2 where
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
@@ -193,4 +193,3 @@ HACKMEM-item-23-a-dual {suc n} (x ∷ xs) (y ∷ ys) with x | y
   ∎)
 ... | I | I rewrite rca-carry-transpose-incʳ xs (~ ys) 
                   | HACKMEM-item-23-a-dual xs ys = refl
-
