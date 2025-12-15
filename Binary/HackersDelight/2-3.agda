@@ -66,13 +66,13 @@ inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
 ... | inj₂ eq | I | I = inj₂ (cong (I ∷_) eq)
 
 ∥-≥ᵘ-maxᵘ : ∀ {n} (xs ys : Binary (suc n)) → (xs ∥ ys) ≥ᵘ maxᵘ xs ys
-∥-≥ᵘ-maxᵘ xs ys with trichotomy xs ys
+∥-≥ᵘ-maxᵘ xs ys with trichotomyᵘ xs ys
 ... | tri-lt _ = ∥-≥ᵘ-right
 ... | tri-eq _ = ∥-≥ᵘ-left
 ... | tri-gt _ = ∥-≥ᵘ-left
 
 &-≤ᵘ-minᵘ : ∀ {n} (xs ys : Binary (suc n)) → (xs & ys) ≤ᵘ minᵘ xs ys
-&-≤ᵘ-minᵘ xs ys with trichotomy xs ys
+&-≤ᵘ-minᵘ xs ys with trichotomyᵘ xs ys
 ... | tri-lt _ = &-≤ᵘ-left
 ... | tri-eq _ = &-≤ᵘ-right
 ... | tri-gt _ = &-≤ᵘ-right

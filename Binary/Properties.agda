@@ -3,9 +3,9 @@ module Binary.Properties where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
-open import Data.Vec using (Vec; _∷_; []; map; foldl)
+open import Data.Vec using (Vec; _∷_; []; map; _∷ʳ_; last; replicate)
 open import Data.Vec.Properties
-open import Data.Nat using (ℕ; suc)
+open import Data.Nat using (ℕ; suc; _≤_)
 open import Data.Bool using (_∧_; _∨_; not; _xor_)
 open import Data.Bool.Properties
 open import Function.Base
@@ -172,7 +172,15 @@ dec-inc-elim (x ∷ xs) with x
 ^-inverseʳ : ∀ {n} (xs : Binary n) → xs ^ (~ xs) ≡ ones n
 ^-inverseʳ = zipWith-inverseʳ (xor-inverseʳ)
 
--- Additional properties
+-- Shift properties
+>>ˢ-signbit : ∀ {n} (xs : Binary (suc n)) → xs >>ˢ n ≡ replicate (suc n) (last xs)
+>>ˢ-signbit xs = {!   !}
+
+-- >>ˢ-cons : ∀ {n} {xs : Binary n} {k : ℕ} {x ∶ Bit} {{_ : k ≤ n}} → xs >>ˢ (suc k) ≡ x ∷ drop (xs >> k)
+-- >>ˢ-cons {ℕ.zero} xs k = []
+-- >>ˢ-cons {suc n} xs k = ?
+
+-- Misc properties
 ∧-true-implies-xor-false : (x y : Bit) (h1 : x ∧ y ≡ I) → x xor y ≡ O
 ∧-true-implies-xor-false O _ ()
 ∧-true-implies-xor-false I O ()

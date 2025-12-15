@@ -71,6 +71,9 @@ AddNotMax xs ys = ys <ᵘ (~ xs)
 signBit : ∀ {n} → Binary (suc n) → Bit
 signBit = last
 
+isNegative : ∀ {n} → (xs : Binary (suc n)) → Bit
+isNegative xs = signBit xs
+
 _<_ : ∀ {n} → Binary (suc n) → Binary (suc n) → Set
 xs < ys with signBit xs | signBit ys
 ... | I | O = ⊤

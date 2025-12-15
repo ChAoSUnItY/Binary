@@ -12,13 +12,13 @@ open import Binary.DozMinMax.Base
 open import Binary.AddProperties
 
 dozᵘ-⌊⌋ : ∀ {n} (xs ys : Binary (suc n)) → zero (suc n) ≤ᵘ dozᵘ xs ys
-dozᵘ-⌊⌋ {n} xs ys with trichotomy xs ys
+dozᵘ-⌊⌋ {n} xs ys with trichotomyᵘ xs ys
 ... | tri-lt lth = inj₂ refl
 ... | tri-eq refl rewrite +-elimʳ xs = inj₂ refl
 ... | tri-gt gth = zero-≤ᵘ-all _
 
 dozᵘ-⌈⌉ : ∀ {n} (xs ys : Binary (suc n)) → dozᵘ xs ys ≤ᵘ maxᵘ xs ys
-dozᵘ-⌈⌉ {n} xs ys with trichotomy xs ys
+dozᵘ-⌈⌉ {n} xs ys with trichotomyᵘ xs ys
 ... | tri-lt lth = zero-≤ᵘ-all ys
 ... | tri-eq refl rewrite +-elimʳ xs = zero-≤ᵘ-all xs
 ... | tri-gt gth = sub-<ᵘ-self gth
