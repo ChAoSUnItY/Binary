@@ -3,11 +3,12 @@ module Binary.Properties where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
-open import Data.Vec using (Vec; _∷_; []; map; _∷ʳ_; last; replicate)
+open import Data.Vec using (Vec; _∷_; []; _++_; map; last; drop; take; replicate; cast)
 open import Data.Vec.Properties
-open import Data.Nat using (ℕ; suc; _≤_)
+open import Data.Nat using (ℕ; suc; _≤_; z≤n; s≤s)
+open import Data.Nat.Properties using (≤-refl; +-suc; +-comm)
 open import Data.Bool using (_∧_; _∨_; not; _xor_)
-open import Data.Bool.Properties
+open import Data.Bool.Properties hiding (≤-refl)
 open import Function.Base
 open import Binary.Base
 
@@ -173,8 +174,27 @@ dec-inc-elim (x ∷ xs) with x
 ^-inverseʳ = zipWith-inverseʳ (xor-inverseʳ)
 
 -- Shift properties
->>ˢ-signbit : ∀ {n} (xs : Binary (suc n)) → xs >>ˢ n ≡ replicate (suc n) (last xs)
->>ˢ-signbit xs = {!   !}
+-- Helper for commutating drop and ++ with cast
+prop1 : ∀ {n} (xs : Binary (suc n)) (ys : Binary n) 
+      → drop n (cast (+-comm (suc n) n) (xs ++ ys)) ≡ drop n (cast (+-comm 1 n) xs) ++ ys
+prop1 {ℕ.zero} (x ∷ []) [] = refl
+prop1 {suc n}  (x ∷ xs) ys = {!   !}
+                       
+>>ˢ-signbit : ∀ {n} (xs : Binary (suc n)) → _>>ˢ_ xs n {≤-refl} ≡ replicate (suc n) (last xs)
+>>ˢ-signbit {n} xs = 
+  begin
+    drop n (cast (+-comm (suc n) n) (xs ++ replicate n (last xs)))
+  ≡⟨ prop1 xs (replicate n (last xs)) ⟩
+    drop n (cast (+-comm 1 n) xs) ++ replicate n (last xs)
+  ≡⟨ cong (_++ replicate n (last xs)) (drop-last xs) ⟩
+    (last xs ∷ []) ++ replicate n (last xs)
+  ≡⟨⟩
+    replicate (suc n) (last xs)
+  ∎
+  where
+    drop-last : ∀ {n} (xs : Binary (suc n)) → drop n (cast (+-comm 1 n) xs) ≡ last xs ∷ []
+    drop-last {ℕ.zero} (x ∷ []) = refl
+    drop-last {suc n} (x ∷ xs) = drop-last xs
 
 -- >>ˢ-cons : ∀ {n} {xs : Binary n} {k : ℕ} {x ∶ Bit} {{_ : k ≤ n}} → xs >>ˢ (suc k) ≡ x ∷ drop (xs >> k)
 -- >>ˢ-cons {ℕ.zero} xs k = []

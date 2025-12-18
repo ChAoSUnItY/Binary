@@ -1,10 +1,10 @@
 module Binary.Base where
 
 open import Relation.Binary.PropositionalEquality using (subst)
-open import Data.Nat using (ℕ; suc; _∸_; _≤_) renaming (_+_ to _+ℕ_)
+open import Data.Nat using (ℕ; suc; _∸_; _≤_)
 open import Data.Nat.Properties using (+-comm)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
-open import Data.Vec using (Vec; _∷_; []; replicate; map; zipWith; _++_; splitAt; drop; take; last)
+open import Data.Vec using (Vec; _∷_; []; replicate; map; zipWith; _++_; splitAt; drop; take; last; cast)
 open import Data.Bool using (Bool; true; false; not)
 open import Data.Product.Base as Product using (proj₁; proj₂)
 
@@ -97,11 +97,11 @@ xs - ys = sub xs ys
 -- shift operations with positive number limited only by the length of binary number.
 
 -- Some rewrite rules to avoid substitution on shift operation's resulted binary length
-_<<_ : ∀ {n} (xs : Binary n) (k : ℕ) → Binary n
-_<<_ {n} xs k = take _ (subst (Vec Bit) (+-comm k _) (zero k ++ xs))
+_<<_ : ∀ {n} (xs : Binary n) (k : ℕ) {_ : k ≤ n} → Binary n
+_<<_ {n} xs k = take _ (cast (+-comm k _) (zero k ++ xs))
 
-_>>_ : ∀ {n} (xs : Binary n) (k : ℕ) → Binary n
-xs >> k = drop _ (subst (Vec Bit) (+-comm _ k) (xs ++ zero k))
+_>>_ : ∀ {n} (xs : Binary n) (k : ℕ) {_ : k ≤ n} → Binary n
+xs >> k = drop _ (cast (+-comm _ k) (xs ++ zero k))
 
-_>>ˢ_ : ∀ {n} (xs : Binary (suc n)) (k : ℕ) → Binary (suc n)
-_>>ˢ_ xs k = drop k (subst (Vec Bit) (+-comm _ k) (xs ++ replicate k (last xs)))
+_>>ˢ_ : ∀ {n} (xs : Binary (suc n)) (k : ℕ) {_ : k ≤ n} → Binary (suc n)
+_>>ˢ_ xs k = drop k (cast (+-comm _ k) (xs ++ replicate k (last xs)))
