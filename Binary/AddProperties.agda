@@ -1,7 +1,6 @@
 module Binary.AddProperties where
 
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
+open import Relation.Binary.PropositionalEquality as Eq
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Data.Vec using (Vec; _∷_; _∷ʳ_; []; _++_; replicate; map; zip; zipWith)
 open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂; map₁)
@@ -28,6 +27,7 @@ rca-no-carry {n} x y xs ys = begin
   ≡⟨⟩
     (x xor y) ∷ rca xs ys (x ∧ y)
   ∎
+
 
 -- Advanced RCA theorems
 rca-comm : ∀ {n} (xs ys : Binary n) (c : Bit) → rca xs ys c ≡ rca ys xs c
@@ -362,6 +362,70 @@ rca-assoc xs ys zs I I = begin
 
 +-assoc : ∀ {n} (xs ys zs : Binary n) → (xs + ys) + zs ≡ xs + (ys + zs)
 +-assoc = rca-assoc-no-carry
+
+-- Algebra properties
+module Algebra {n} where
+  open import Level using (0ℓ)
+  open import Algebra.Bundles
+    using (Magma; Semigroup; CommutativeSemigroup; CommutativeMonoid; Monoid)
+  open import Algebra.Structures {A = Binary n} _≡_
+
+  -- Structures
+  +-isMagma : IsMagma _+_
+  +-isMagma = record
+    { isEquivalence = isEquivalence
+    ; ∙-cong        = cong₂ _+_
+    }
+
+  +-isSemigroup : IsSemigroup _+_
+  +-isSemigroup = record
+    { isMagma = +-isMagma
+    ; assoc   = +-assoc
+    }
+
+  +-isCommutativeSemigroup : IsCommutativeSemigroup _+_
+  +-isCommutativeSemigroup = record
+    { isSemigroup = +-isSemigroup
+    ; comm        = +-comm
+    }
+
+  +-0-isMonoid : IsMonoid _+_ (zero n)
+  +-0-isMonoid = record
+    { isSemigroup = +-isSemigroup
+    ; identity    = +-identityˡ , +-identityʳ
+    }
+
+  +-0-isCommutativeMonoid : IsCommutativeMonoid _+_ (zero n)
+  +-0-isCommutativeMonoid = record
+    { isMonoid = +-0-isMonoid
+    ; comm     = +-comm
+    }
+  
+  -- Bundles
+  +-magma : Magma 0ℓ 0ℓ
+  +-magma = record
+    { isMagma = +-isMagma
+    }
+
+  +-semigroup : Semigroup 0ℓ 0ℓ
+  +-semigroup = record
+    { isSemigroup = +-isSemigroup
+    }
+
+  +-commutativeSemigroup : CommutativeSemigroup 0ℓ 0ℓ
+  +-commutativeSemigroup = record
+    { isCommutativeSemigroup = +-isCommutativeSemigroup
+    }
+
+  +-monoid : Monoid 0ℓ 0ℓ
+  +-monoid = record
+    { isMonoid = +-0-isMonoid
+    }
+
+  +-commutativeMonoid : CommutativeMonoid 0ℓ 0ℓ
+  +-commutativeMonoid = record
+    { isCommutativeMonoid = +-0-isCommutativeMonoid
+    }
 
 -- Additional theorems for rca
 ~-+-ones : ∀ {n} (xs : Binary n) → xs + (~ xs) ≡ ones n
