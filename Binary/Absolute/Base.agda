@@ -16,13 +16,8 @@ nabs xs with signBit xs
 ... | O = - xs
 ... | I = xs
 
-
--- Computes |x - y| treating inputs as unsigned integers.
--- If x >= y, returns x - y.
--- If x < y, returns y - x.
--- This guarantees the result corresponds to the magnitude of the difference
--- without modular wrap-around affecting the interpretation (provided |x-y| < 2^(n+1)),
--- effectively essentially performing subtraction in ℕ lifted to Binary.
+-- Computes |x - y| within unsigned domain, without causing
+-- any overflow.
 abs-sub : ∀ {n} (xs ys : Binary (suc n)) → Binary (suc n)
 abs-sub {n} xs ys with trichotomyᵘ xs ys
 ... | tri-lt _ = ys - xs
