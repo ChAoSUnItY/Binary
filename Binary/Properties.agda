@@ -3,10 +3,11 @@ module Binary.Properties where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
-open import Data.Vec using (Vec; _∷_; []; _++_; map; last; drop; take; replicate; cast)
+open import Data.Vec using (Vec; _∷_; []; _++_; map; last; drop; take; replicate; cast; [_])
 open import Data.Vec.Properties
-open import Data.Nat using (ℕ; suc; _≤_; z≤n; s≤s)
-open import Data.Nat.Properties using (≤-refl; +-suc; +-comm)
+open import Data.Vec.Relation.Binary.Equality.Cast
+open import Data.Nat using (ℕ; suc; _≤_; z≤n; s≤s) renaming (_+_ to _+ℕ_)
+open import Data.Nat.Properties using (≤-refl; +-suc; +-comm; +-assoc)
 open import Data.Bool using (_∧_; _∨_; not; _xor_)
 open import Data.Bool.Properties hiding (≤-refl)
 open import Function.Base
@@ -30,6 +31,14 @@ cons-inj refl = refl
     xs
   ∎
 
+~-zero≡ones : ∀ {n} → ~ (zero n) ≡ ones n
+~-zero≡ones {ℕ.zero} = refl
+~-zero≡ones {suc n} rewrite ~-zero≡ones {n} = refl
+
+~-ones≡zero : ∀ {n} → ~ (ones n) ≡ zero n
+~-ones≡zero {ℕ.zero} = refl
+~-ones≡zero {suc n} rewrite ~-ones≡zero {n} = refl
+
 -- 2's complement properties
 nneg-involutive : ∀ {n} (xs : Binary n) → - (- xs) ≡ xs
 nneg-involutive [] = refl
@@ -48,6 +57,13 @@ nneg-involutive (x ∷ xs) with x
   ≡⟨ cong (I ∷_) (~-involutive xs) ⟩
     I ∷ xs
   ∎
+
+nneg-zero≡zero : ∀ {n} → - (zero n) ≡ zero n
+nneg-zero≡zero {ℕ.zero} = refl
+nneg-zero≡zero {suc n} rewrite nneg-zero≡zero {n} = refl
+
+nneg-ones≡inc-zero : ∀ {n} → - (ones n) ≡ inc (zero n)
+nneg-ones≡inc-zero {n} rewrite ~-ones≡zero {n} = refl
 
 -- increment / decrement properties
 inc-ones≡zero : ∀ {n} → inc (ones n) ≡ zero n
@@ -173,32 +189,39 @@ dec-inc-elim (x ∷ xs) with x
 ^-inverseʳ : ∀ {n} (xs : Binary n) → xs ^ (~ xs) ≡ ones n
 ^-inverseʳ = zipWith-inverseʳ (xor-inverseʳ)
 
+^-onesˡ : ∀ {n} (xs : Binary n) → ones n ^ xs ≡ ~ xs
+^-onesˡ [] = refl
+^-onesˡ (x ∷ xs) rewrite ^-onesˡ xs = refl
+
+^-onesʳ : ∀ {n} (xs : Binary n) → xs ^ ones n ≡ ~ xs
+^-onesʳ [] = refl
+^-onesʳ (x ∷ xs) rewrite ^-onesʳ xs | xor-comm x I | true-xor x = refl
+
+^-same : ∀ {n} (xs : Binary n) → xs ^ xs ≡ zero n
+^-same [] = refl
+^-same (x ∷ xs) rewrite ^-same xs | xor-same x = refl
+
 -- Shift properties
--- Helper for commutating drop and ++ with cast
-prop1 : ∀ {n} (xs : Binary (suc n)) (ys : Binary n) 
-      → drop n (cast (+-comm (suc n) n) (xs ++ ys)) ≡ drop n (cast (+-comm 1 n) xs) ++ ys
-prop1 {ℕ.zero} (x ∷ []) [] = refl
-prop1 {suc n}  (x ∷ xs) ys = {!   !}
-                       
->>ˢ-signbit : ∀ {n} (xs : Binary (suc n)) → _>>ˢ_ xs n {≤-refl} ≡ replicate (suc n) (last xs)
+>>ˢ-signbit : ∀ {n} (xs : Binary (suc n)) → xs >>ˢ n ≡ replicate (suc n) (last xs)
 >>ˢ-signbit {n} xs = 
   begin
     drop n (cast (+-comm (suc n) n) (xs ++ replicate n (last xs)))
-  ≡⟨ prop1 xs (replicate n (last xs)) ⟩
-    drop n (cast (+-comm 1 n) xs) ++ replicate n (last xs)
+  ≡⟨ drop-++-distrubʳ xs (replicate n (last xs)) ⟩
+    drop n (cast (+-comm _ n) xs) ++ replicate n (last xs)
   ≡⟨ cong (_++ replicate n (last xs)) (drop-last xs) ⟩
     (last xs ∷ []) ++ replicate n (last xs)
   ≡⟨⟩
     replicate (suc n) (last xs)
   ∎
   where
-    drop-last : ∀ {n} (xs : Binary (suc n)) → drop n (cast (+-comm 1 n) xs) ≡ last xs ∷ []
+    drop-++-distrubʳ : ∀ {n k} (xs : Binary (suc n)) (ys : Binary k) 
+                     → drop n (cast (sym (+-suc n k)) (xs ++ ys)) ≡ drop n (cast (+-comm _ n) xs) ++ ys
+    drop-++-distrubʳ {ℕ.zero} {_} (x ∷ []) ys rewrite cast-is-id refl ys = refl
+    drop-++-distrubʳ {suc n}  {_} (x ∷ xs) ys = drop-++-distrubʳ xs ys
+
+    drop-last : ∀ {n} (xs : Binary (suc n)) → drop n (cast (+-comm _ n) xs) ≡ [ last xs ]
     drop-last {ℕ.zero} (x ∷ []) = refl
     drop-last {suc n} (x ∷ xs) = drop-last xs
-
--- >>ˢ-cons : ∀ {n} {xs : Binary n} {k : ℕ} {x ∶ Bit} {{_ : k ≤ n}} → xs >>ˢ (suc k) ≡ x ∷ drop (xs >> k)
--- >>ˢ-cons {ℕ.zero} xs k = []
--- >>ˢ-cons {suc n} xs k = ?
 
 -- Misc properties
 ∧-true-implies-xor-false : (x y : Bit) (h1 : x ∧ y ≡ I) → x xor y ≡ O

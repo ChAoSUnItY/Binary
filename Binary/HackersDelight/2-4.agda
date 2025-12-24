@@ -11,15 +11,65 @@ open import Data.Bool using (_∧_; _∨_; not; _xor_)
 open import Data.Bool.Properties
 open import Function.Base
 open import Binary.Base
+open import Binary.AddProperties
 open import Binary.Comparison.Base
 open import Binary.Comparison.Properties
 open import Binary.Properties
 open import Binary.DozMinMax.Base
 open import Binary.DozMinMax.Properties
 open import Binary.Absolute.Base
-open import Binary.AddProperties
+
+open import Binary.HackersDelight.2-1
 
 abs-eq-a : ∀ {n} (xs : Binary (suc n)) → abs xs ≡ (xs ^ (xs >>ˢ n)) - (xs >>ˢ n)
-abs-eq-a xs with signBit xs
-... | O = {!    !}
-... | I = {!    !}
+abs-eq-a {n} xs rewrite >>ˢ-signbit xs with signBit xs
+... | O rewrite ^-identityʳ xs | nneg-zero≡zero {n} | +-identityʳ xs = refl
+... | I rewrite ^-onesʳ xs 
+              | nneg-ones≡inc-zero {suc n} 
+              | sym (rca-inc-comm (~ xs) (zero (suc n)) O)
+              | +-identityʳ (- xs)
+              = refl
+
+abs-eq-b : ∀ {n} (xs : Binary (suc n)) → abs xs ≡ (xs + (xs >>ˢ n)) ^ (xs >>ˢ n)
+abs-eq-b {n} xs rewrite >>ˢ-signbit xs with signBit xs
+... | O rewrite +-identityʳ xs | ^-identityʳ xs = refl
+... | I rewrite +-ones≡dec xs | ^-onesʳ (dec xs) | ~-dec≡inc-~ xs = refl
+
+abs-eq-c : ∀ {n} (xs : Binary (suc n)) → abs xs ≡ xs - ((xs + xs) & (xs >>ˢ n))
+abs-eq-c {n} xs rewrite >>ˢ-signbit xs with signBit xs
+... | O rewrite &-zeroʳ (xs + xs) | nneg-zero≡zero {n} | +-identityʳ xs = refl
+... | I rewrite &-identityʳ (xs + xs)
+              | nneg-distrib xs xs
+              | sym (+-assoc xs (- xs) (- xs))
+              | +-elimʳ xs
+              | +-identityˡ (- xs) 
+              = refl
+
+nabs-eq-a : ∀ {n} (xs : Binary (suc n)) → nabs xs ≡ (xs >>ˢ n) - (xs ^ (xs >>ˢ n))
+nabs-eq-a {n} xs rewrite >>ˢ-signbit xs with signBit xs
+... | O rewrite ^-identityʳ xs | +-identityˡ (- xs) = refl
+... | I rewrite ^-onesʳ xs 
+              | ~-involutive xs
+              | +-comm (ones (suc n)) (inc xs) 
+              | +-ones≡dec (inc xs)
+              | dec-inc-elim xs
+              = refl
+
+nabs-eq-b : ∀ {n} (xs : Binary (suc n)) → nabs xs ≡ ((xs >>ˢ n) - xs) ^ (xs >>ˢ n)
+nabs-eq-b {n} xs rewrite >>ˢ-signbit xs with signBit xs
+... | O rewrite +-identityˡ (- xs) | ^-identityʳ (- xs) = refl
+... | I rewrite +-comm (ones (suc n)) (- xs)
+              | +-ones≡dec (- xs)
+              | dec-inc-elim (~ xs)
+              | ^-onesʳ (~ xs)
+              | ~-involutive xs 
+              = refl
+
+nabs-eq-c : ∀ {n} (xs : Binary (suc n)) → nabs xs ≡ ((xs + xs) & (xs >>ˢ n)) - xs
+nabs-eq-c {n} xs rewrite >>ˢ-signbit xs with signBit xs
+... | O rewrite &-zeroʳ (xs + xs) | +-identityˡ (- xs) = refl
+... | I rewrite &-identityʳ (xs + xs)
+              | +-assoc xs xs (- xs) 
+              | +-elimʳ xs 
+              | +-identityʳ xs
+              = refl

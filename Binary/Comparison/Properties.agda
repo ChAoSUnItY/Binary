@@ -162,6 +162,10 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomyᵘ xs ys
 ... | tri-gt y>x = ⊥-elim (gth (inj₁ (lt-tail (>ᵘ-to-<ᵘ y>x))))
 >ᵘ-to-<ᵘ {suc n} {I ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
 
+<ᵘ-to->ᵘ : ∀ {n} {xs ys : Binary (suc n)} → xs <ᵘ ys → ys >ᵘ xs
+<ᵘ-to->ᵘ lth (inj₁ gth) = <ᵘ-asym lth gth
+<ᵘ-to->ᵘ lth (inj₂ eq) rewrite eq = <ᵘ-irrefl lth
+
 -- Common facts
 ones-≥ᵘ-zero : ∀ {n} → ones (suc n) ≥ᵘ Binary.Base.zero (suc n)
 ones-≥ᵘ-zero {ℕ.zero} (lt-head _ ())
@@ -319,14 +323,3 @@ inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
 -- gt
 
 -- gte
-
--- Common facts
-pos->>ˢ-n-1-eq-zero : ∀ {n} {xs : Binary (suc n)} → (zero (suc n)) ≤ xs → - (xs >>ˢ n) ≡ zero (suc n)
-pos->>ˢ-n-1-eq-zero {ℕ.zero} {O ∷ []} _ = refl
-pos->>ˢ-n-1-eq-zero {ℕ.zero} {I ∷ []} (inj₁ ())
-pos->>ˢ-n-1-eq-zero {ℕ.zero} {I ∷ []} (inj₂ ())
-pos->>ˢ-n-1-eq-zero {suc n} {O ∷ xs} 0≤xs = let
-    ih = pos->>ˢ-n-1-eq-zero (≤-cons-general 0≤xs)
-  in
-    {!  ih !}
-pos->>ˢ-n-1-eq-zero {suc n} {I ∷ xs} 0≤xs = {!   !}

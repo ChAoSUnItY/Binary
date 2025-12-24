@@ -369,3 +369,52 @@ rca-assoc xs ys zs I I = begin
 ~-+-ones (x ∷ xs) with x
 ... | O rewrite ~-+-ones xs = refl
 ... | I rewrite ~-+-ones xs = refl
+
++-ones≡dec : ∀ {n} (xs : Binary n) → xs + ones n ≡ dec xs
++-ones≡dec [] = refl
++-ones≡dec {suc n} (x ∷ xs) with x
+... | O rewrite +-ones≡dec xs = refl
+... | I rewrite rca-carry-transpose-incʳ xs (ones n)
+              | inc-ones≡zero {n}
+              | +-identityʳ xs = refl
+
+nneg-distrib : ∀ {n} (xs ys : Binary n) → - (xs + ys) ≡ (- xs) + (- ys)
+nneg-distrib [] [] = refl
+nneg-distrib (O ∷ xs) (O ∷ ys) = cong (O ∷_) (nneg-distrib xs ys)
+nneg-distrib (O ∷ xs) (I ∷ ys) = cong (I ∷_) (inc-inj (begin
+                                   inc (map not (rca xs ys O))
+                                 ≡⟨ nneg-distrib xs ys ⟩
+                                   (- xs) + (- ys)
+                                 ≡⟨ rca-inc-liftʳ (- xs) (~ ys) O ⟩
+                                   inc (rca (inc (map not xs)) (map not ys) O)
+                                 ∎))
+nneg-distrib (I ∷ xs) (O ∷ ys) = cong (I ∷_) (inc-inj (begin
+                                  inc (map not (rca xs ys O))
+                                 ≡⟨ nneg-distrib xs ys ⟩
+                                   (- xs) + (- ys)
+                                 ≡⟨ rca-inc-liftˡ (~ xs) (- ys) O ⟩
+                                   inc (rca (map not xs) (inc (map not ys)) O)
+                                 ∎))
+nneg-distrib (I ∷ xs) (I ∷ ys) rewrite rca-carry-transpose-incˡ xs ys
+                                     | rca-carry-transpose-incˡ (~ xs) (~ ys)
+                                     = cong (O ∷_) (inc-inj (begin
+                                         inc (inc (~ (rca (inc xs) ys O)))
+                                       ≡⟨ cong (λ l → inc (inc (~ l))) (trans (sym (rca-carry-transpose-incˡ xs ys)) (rca-carry-lift-inc xs ys)) ⟩
+                                         inc (inc (~ (inc (rca xs ys O))))
+                                       ≡⟨ cong (inc ∘ inc) (~-inc≡dec-~ (rca xs ys O)) ⟩
+                                         inc (inc (dec (~ (rca xs ys O))))
+                                       ≡⟨ cong inc (inc-dec-elim (~ (rca xs ys O))) ⟩
+                                         inc (~ (rca xs ys O))
+                                       ≡⟨⟩
+                                         - (xs + ys)
+                                       ≡⟨ nneg-distrib xs ys ⟩
+                                         (- xs) + (- ys)
+                                       ≡⟨ rca-inc-liftʳ (- xs) (~ ys) O ⟩
+                                         inc (rca (- xs) (~ ys) O)
+                                       ∎))
+                                       where
+                                         -- This proof is also proved in Hacker's Delight, chapter 2-1
+                                         ~-inc≡dec-~ : ∀ {n} (zs : Binary n) → ~ (inc zs) ≡ dec (~ zs)
+                                         ~-inc≡dec-~ [] = refl
+                                         ~-inc≡dec-~ (O ∷ zs) = refl
+                                         ~-inc≡dec-~ (I ∷ zs) = cong (I ∷_) (~-inc≡dec-~ zs)

@@ -2,7 +2,7 @@ module Binary.Base where
 
 open import Relation.Binary.PropositionalEquality using (subst)
 open import Data.Nat using (ℕ; suc; _∸_; _≤_)
-open import Data.Nat.Properties using (+-comm)
+open import Data.Nat.Properties using (+-comm; ≤-refl)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
 open import Data.Vec using (Vec; _∷_; []; replicate; map; zipWith; _++_; splitAt; drop; take; last; cast)
 open import Data.Bool using (Bool; true; false; not)
@@ -103,5 +103,9 @@ _<<_ {n} xs k = take _ (cast (+-comm k _) (zero k ++ xs))
 _>>_ : ∀ {n} (xs : Binary n) (k : ℕ) {_ : k ≤ n} → Binary n
 xs >> k = drop _ (cast (+-comm _ k) (xs ++ zero k))
 
-_>>ˢ_ : ∀ {n} (xs : Binary (suc n)) (k : ℕ) {_ : k ≤ n} → Binary (suc n)
+instance
+  ≤-refl-instance : ∀ {n} → n ≤ n
+  ≤-refl-instance = ≤-refl
+
+_>>ˢ_ : ∀ {n} (xs : Binary (suc n)) (k : ℕ) {{_ : k ≤ n}} → Binary (suc n)
 _>>ˢ_ xs k = drop k (cast (+-comm _ k) (xs ++ replicate k (last xs)))
