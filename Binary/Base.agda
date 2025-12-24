@@ -1,9 +1,12 @@
 module Binary.Base where
 
-open import Data.Nat using (ℕ; suc)
+open import Relation.Binary.PropositionalEquality using (subst)
+open import Data.Nat using (ℕ; suc; _∸_; _≤_)
+open import Data.Nat.Properties using (+-comm; ≤-refl)
 open import Data.Bool using (Bool; true; false; not; _∨_; _∧_; _xor_)
-open import Data.Vec using (Vec; _∷_; []; replicate; map; zipWith)
+open import Data.Vec using (Vec; _∷_; []; replicate; map; zipWith; _++_; splitAt; drop; take; last; cast)
 open import Data.Bool using (Bool; true; false; not)
+open import Data.Product.Base as Product using (proj₁; proj₂)
 
 pattern I = true
 pattern O = false
@@ -86,3 +89,23 @@ sub xs ys = add xs (- ys)
 
 _-_ : ∀ {n} → Binary n → Binary n → Binary n
 xs - ys = sub xs ys
+
+-- Shift operations
+--
+-- Author's note: it is rather rare to use shift operations with a arbitrary length of binary
+-- number, commonly, it's only used with a limited length of binary number. Thus, we only define
+-- shift operations with positive number limited only by the length of binary number.
+
+-- Some rewrite rules to avoid substitution on shift operation's resulted binary length
+_<<_ : ∀ {n} (xs : Binary n) (k : ℕ) {_ : k ≤ n} → Binary n
+_<<_ {n} xs k = take _ (cast (+-comm k _) (zero k ++ xs))
+
+_>>_ : ∀ {n} (xs : Binary n) (k : ℕ) {_ : k ≤ n} → Binary n
+xs >> k = drop _ (cast (+-comm _ k) (xs ++ zero k))
+
+instance
+  ≤-refl-instance : ∀ {n} → n ≤ n
+  ≤-refl-instance = ≤-refl
+
+_>>ˢ_ : ∀ {n} (xs : Binary (suc n)) (k : ℕ) {{_ : k ≤ n}} → Binary (suc n)
+_>>ˢ_ xs k = drop k (cast (+-comm _ k) (xs ++ replicate k (last xs)))

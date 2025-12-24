@@ -4,6 +4,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Unit using (⊤)
 open import Data.Nat using (ℕ; suc)
 open import Data.Vec using (Vec; _∷_; [])
 open import Binary.Base
@@ -37,20 +38,26 @@ open import Binary.AddProperties
 <ᵘ-cons-general {{inj₁ ()}} (lt-head refl lt)
 <ᵘ-cons-general {{inj₂ ()}} (lt-head refl lt)
 
--- trichotomy
-data Trichotomy {n} (xs ys : Binary (suc n)) : Set where
-  tri-lt : xs <ᵘ ys → Trichotomy xs ys
-  tri-eq : xs ≡ ys → Trichotomy xs ys
-  tri-gt : xs >ᵘ ys → Trichotomy xs ys
+<ᵘ-cons-general-weak : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)} 
+                        → (x ∷ xs) <ᵘ (y ∷ ys) 
+                        → xs ≤ᵘ ys
+<ᵘ-cons-general-weak (lt-tail lth) = inj₁ lth
+<ᵘ-cons-general-weak (lt-head refl lt) = inj₂ refl
 
-trichotomy : ∀ {n} (xs ys : Binary (suc n)) → Trichotomy xs ys
-trichotomy {ℕ.zero} (x ∷ []) (y ∷ []) with x | y
+-- trichotomy
+data Trichotomyᵘ {n} (xs ys : Binary (suc n)) : Set where
+  tri-lt : xs <ᵘ ys → Trichotomyᵘ xs ys
+  tri-eq : xs ≡ ys → Trichotomyᵘ xs ys
+  tri-gt : xs >ᵘ ys → Trichotomyᵘ xs ys
+
+trichotomyᵘ : ∀ {n} (xs ys : Binary (suc n)) → Trichotomyᵘ xs ys
+trichotomyᵘ {ℕ.zero} (x ∷ []) (y ∷ []) with x | y
 ... | O | O = tri-eq refl
 ... | O | I = tri-lt (lt-head refl lt)
 ... | I | O = tri-gt (λ { (inj₁ (lt-head refl ()))
                         ; (inj₂ ()) })
 ... | I | I = tri-eq refl
-trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
+trichotomyᵘ {suc n} (x ∷ xs) (y ∷ ys) with trichotomyᵘ xs ys
 ... | tri-lt lth = tri-lt (lt-tail lth)
 ... | tri-gt gth = tri-gt (λ { (inj₁ (lt-tail l)) → gth (inj₁ l)
                              ; (inj₁ (lt-head refl _)) → gth (inj₂ refl)
@@ -123,7 +130,7 @@ trichotomy {suc n} (x ∷ xs) (y ∷ ys) with trichotomy xs ys
 
 -- gte
 split-≥ᵘ : ∀ {n} {xs ys : Binary (suc n)} → (xs ≥ᵘ ys) → (xs ≡ ys) ⊎ (xs >ᵘ ys)
-split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
+split-≥ᵘ {_} {xs} {ys} geh with trichotomyᵘ xs ys
 ... | tri-lt lth = ⊥-elim (geh lth)
 ... | tri-eq eqh = inj₁ eqh
 ... | tri-gt gth = inj₂ gth
@@ -149,11 +156,15 @@ split-≥ᵘ {_} {xs} {ys} geh with trichotomy xs ys
     xs>ys : xs >ᵘ ys
     xs>ys (inj₁ x<y) = gth (inj₁ (lt-tail x<y))
     xs>ys (inj₂ x≡y) = gth (inj₁ (lt-head x≡y lt))
->ᵘ-to-<ᵘ {suc n} {I ∷ xs} {O ∷ ys} gth with trichotomy ys xs
+>ᵘ-to-<ᵘ {suc n} {I ∷ xs} {O ∷ ys} gth with trichotomyᵘ ys xs
 ... | tri-lt y<x = lt-tail y<x
 ... | tri-eq y=x = lt-head y=x lt
 ... | tri-gt y>x = ⊥-elim (gth (inj₁ (lt-tail (>ᵘ-to-<ᵘ y>x))))
 >ᵘ-to-<ᵘ {suc n} {I ∷ xs} {I ∷ ys} gth = lt-tail (>ᵘ-to-<ᵘ (λ x≤y → gth (≤ᵘ-cons-general' {{inj₂ refl}} x≤y)))
+
+<ᵘ-to->ᵘ : ∀ {n} {xs ys : Binary (suc n)} → xs <ᵘ ys → ys >ᵘ xs
+<ᵘ-to->ᵘ lth (inj₁ gth) = <ᵘ-asym lth gth
+<ᵘ-to->ᵘ lth (inj₂ eq) rewrite eq = <ᵘ-irrefl lth
 
 -- Common facts
 ones-≥ᵘ-zero : ∀ {n} → ones (suc n) ≥ᵘ Binary.Base.zero (suc n)
@@ -296,3 +307,19 @@ inc-≤ᵘ-max {suc n} {I ∷ xs} (lt-tail lth) with inc-≤ᵘ-max lth
 ... | inj₁ lth rewrite rca-carry-lift-inc xs ys = lt-tail lth
 ... | inj₂ eqh = lt-head (trans (rca-carry-lift-inc xs ys) eqh) lt
 +-no-overflow {suc n} {I ∷ xs} {I ∷ ys} (lt-head _ ())
+
+-- Signed properties
+-- lt
+
+-- lte
+≤-cons-general : ∀ {n} {x y : Bit} {xs ys : Binary (suc n)} → (x ∷ xs) ≤ (y ∷ ys) → xs ≤ ys
+≤-cons-general {n} {x} {y} {xs} {ys} (inj₁ lth) with signBit xs | signBit ys
+... | O | O = <ᵘ-cons-general-weak lth
+... | O | I = inj₁ lth
+... | I | O = inj₁ Data.Unit.tt
+... | I | I = <ᵘ-cons-general-weak lth
+≤-cons-general {n} {x} {y} {xs} {ys} (inj₂ refl) = inj₂ refl
+
+-- gt
+
+-- gte
