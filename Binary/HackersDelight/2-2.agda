@@ -13,29 +13,52 @@ open import Binary.Base
 open import Binary.Properties
 open import Binary.AddProperties
 
+-- Equation (a), trivial as it's just definition of 2's complement.
+nneg≡inc-~ : ∀ {n} (xs : Binary n) → - xs ≡ inc (~ xs)
+nneg≡inc-~ xs = refl 
+
+-- Equation (b)
 nneg≡~-dec : ∀ {n} (xs : Binary n) → - xs ≡ ~ (dec xs)
 nneg≡~-dec [] = refl
-nneg≡~-dec (x ∷ xs) with x
-... | O = begin
-    inc (I ∷ ~ xs)
-  ≡⟨⟩
-    O ∷ inc (~ xs)
-  ≡⟨ cong (O ∷_) (nneg≡~-dec xs) ⟩
-    O ∷ ~ (dec xs)
-  ≡⟨⟩
-    ~ (dec (O ∷ xs))
+nneg≡~-dec {n} xs = begin
+    - xs
+  ≡⟨ sym (~-involutive (- xs)) ⟩
+    (~ (~ (- xs)))
+  ≡⟨ cong (~_) (~-nneg≡dec xs) ⟩
+    ~ (dec xs)
   ∎
-... | I = refl
+  where
+    -- Also showed in equation (c)
+    ~≡nneg-dec : ∀ {n} (xs : Binary n) → ~ xs ≡ dec (- xs)
+    ~≡nneg-dec xs = begin
+        ~ xs
+      ≡⟨ sym (dec-inc-elim (~ xs)) ⟩
+        dec (inc (~ xs))
+      ≡⟨⟩
+        dec (- xs)
+      ∎
 
+    -- Also showed in equation (e)
+    ~-nneg≡dec : ∀ {n} (xs : Binary n) → ~ (- xs) ≡ dec xs
+    ~-nneg≡dec xs = begin
+        (~ (- xs))
+      ≡⟨ ~≡nneg-dec (- xs) ⟩
+        dec (- (- xs))
+      ≡⟨ cong (dec) (nneg-involutive xs) ⟩
+        dec xs
+      ∎
+
+-- Equation (c)
 ~≡nneg-dec : ∀ {n} (xs : Binary n) → ~ xs ≡ dec (- xs)
 ~≡nneg-dec xs = begin
     ~ xs
-  ≡⟨ (sym (dec-inc-elim (~ xs))) ⟩
+  ≡⟨ sym (dec-inc-elim (~ xs)) ⟩
     dec (inc (~ xs))
   ≡⟨⟩
     dec (- xs)
   ∎
 
+-- Equation (d)
 nneg-~≡inc : ∀ {n} (xs : Binary n) → - (~ xs) ≡ inc xs
 nneg-~≡inc xs = begin
     - (~ xs)
@@ -45,6 +68,7 @@ nneg-~≡inc xs = begin
     inc xs
   ∎
 
+-- Equation (e)
 ~-nneg≡dec : ∀ {n} (xs : Binary n) → ~ (- xs) ≡ dec xs
 ~-nneg≡dec xs = begin
     (~ (- xs))
@@ -54,6 +78,7 @@ nneg-~≡inc xs = begin
     dec xs
   ∎
 
+-- Equation (f)
 +≡--~-dec : ∀ {n} (xs ys : Binary n) → xs + ys ≡ dec (xs - (~ ys))
 +≡--~-dec xs ys = begin
     xs + ys
@@ -65,36 +90,15 @@ nneg-~≡inc xs = begin
     dec (xs - (~ ys))
   ∎
 
+-- Equation (g)
 HACKMEM-item-23-a : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ^ ys) + ((xs & ys) + (xs & ys))
 HACKMEM-item-23-a [] [] = refl
-HACKMEM-item-23-a (x ∷ xs) (y ∷ ys) with x | y
-... | O | O = begin
-    O ∷ xs + ys
-  ≡⟨ cong (O ∷_) (HACKMEM-item-23-a xs ys) ⟩
-    O ∷ (xs ^ ys) + ((xs & ys) + (xs & ys))
-  ∎
-... | I | O = begin
-    I ∷ xs + ys
-  ≡⟨ cong (I ∷_) (HACKMEM-item-23-a xs ys) ⟩
-    I ∷ (xs ^ ys) + ((xs & ys) + (xs & ys))
-  ∎
-... | O | I = begin
-    I ∷ xs + ys
-  ≡⟨ cong (I ∷_) (HACKMEM-item-23-a xs ys) ⟩
-    I ∷ (xs ^ ys) + ((xs & ys) + (xs & ys))
-  ∎
-... | I | I = begin
-    O ∷ rca xs ys I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc xs ys) ⟩
-    O ∷ inc (xs + ys)
-  ≡⟨ cong (λ l → O ∷ inc l) (HACKMEM-item-23-a xs ys) ⟩
-    O ∷ inc ((xs ^ ys) + ((xs & ys) + (xs & ys)))
-  ≡⟨ cong (O ∷_) (sym (rca-inc-liftʳ (xs ^ ys) ((xs & ys) + (xs & ys)) O)) ⟩
-    O ∷ ((xs ^ ys) + inc ((xs & ys) + (xs & ys)))
-  ≡⟨ cong (λ l → O ∷ ((xs ^ ys) + l)) (sym (rca-carry-lift-inc (xs & ys) (xs & ys))) ⟩
-    O ∷ (xs ^ ys) + (rca (xs & ys) (xs & ys) I)
-  ∎
+HACKMEM-item-23-a (x ∷ xs) (y ∷ ys) rewrite xor-same (x ∧ y)
+                                          | xor-identityʳ (x xor y)
+                                          | xor-identityʳ (x xor y)
+                                          | ∨-identityʳ (x ∧ y) = {!   !}
 
+-- Equation (h)
 HACKMEM-item-23-b : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ∥ ys) + (xs & ys)
 HACKMEM-item-23-b [] [] = refl
 HACKMEM-item-23-b (x ∷ xs) (y ∷ ys) with x | y
@@ -123,6 +127,7 @@ HACKMEM-item-23-b (x ∷ xs) (y ∷ ys) with x | y
     O ∷ rca (xs ∥ ys) (xs & ys) I
   ∎
 
+-- Equation (i)
 +≡∥-+-∥-+-^ : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
 +≡∥-+-∥-+-^ [] [] = refl
 +≡∥-+-∥-+-^ (x ∷ xs) (y ∷ ys) with x | y
@@ -165,6 +170,7 @@ HACKMEM-item-23-b (x ∷ xs) (y ∷ ys) with x | y
     O ∷ (rca (xs ∥ ys) (xs ∥ ys) I) - (xs ^ ys)
   ∎
 
+-- Equation (j)
 -≡+-~-+ : ∀ {n} (xs ys : Binary n) → xs - ys ≡ inc (xs + (~ ys))
 -≡+-~-+ xs ys = begin
     xs - ys
@@ -174,6 +180,8 @@ HACKMEM-item-23-b (x ∷ xs) (y ∷ ys) with x | y
     inc (xs + (~ ys))
   ∎
 
+-- Equation (k)
+--
 -- This theorem is extremely hard to be written in reasoning chain,
 -- we'll leave this to readers :)
 HACKMEM-item-23-a-dual : ∀ {n} (xs ys : Binary n) → xs - ys ≡ ((xs ^ ys) - ((~ xs) & ys)) - ((~ xs) & ys)
