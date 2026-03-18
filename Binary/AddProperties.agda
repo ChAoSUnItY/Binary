@@ -5,7 +5,7 @@ open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Data.Vec using (Vec; _∷_; _∷ʳ_; []; _++_; replicate; map; zip; zipWith)
 open import Data.Product using (Σ; _,_; _×_; proj₁; proj₂; map₁)
 open import Data.Nat using (ℕ; suc)
-open import Data.Bool using (_∧_; _∨_; not; _xor_)
+open import Data.Bool using (_∧_; _∨_; not; _xor_; if_then_else_)
 open import Data.Bool.Properties
 open import Function
 open import Tactic.Cong
@@ -28,6 +28,19 @@ rca-no-carry {n} x y xs ys = begin
     (x xor y) ∷ rca xs ys (x ∧ y)
   ∎
 
+-- Add result gives 3 possible addition outcomes for theorems to prove with,
+-- without the need to prove an additional unnecessary clause for 
+-- "either a bit is true".
+data AddResult (x y : Bit) : Set where
+  case-zero  : (x ≡ O) → (y ≡ O) → AddResult x y
+  case-one   : (x ∧ y ≡ O) → (x ∨ y ≡ I) → (x xor y ≡ I) → AddResult x y
+  case-carry : (x ≡ I) → (y ≡ I) → AddResult x y
+
+add-result : ∀ (x y : Bit) → AddResult x y
+add-result O O = case-zero  refl refl
+add-result O I = case-one   refl refl refl
+add-result I O = case-one   refl refl refl
+add-result I I = case-carry refl refl
 
 -- Advanced RCA theorems
 rca-comm : ∀ {n} (xs ys : Binary n) (c : Bit) → rca xs ys c ≡ rca ys xs c
@@ -42,7 +55,7 @@ rca-comm (x ∷ xs) (y ∷ ys) c = begin
     ((y xor x) xor c) ∷ rca xs ys (y ∧ x ∨ c ∧ (y xor x))
   ≡⟨ cong (((y xor x) xor c) ∷_) (rca-comm xs ys (y ∧ x ∨ c ∧ (y xor x))) ⟩
     ((y xor x) xor c) ∷ rca ys xs (y ∧ x ∨ c ∧ (y xor x))
-  ≡⟨ refl ⟩
+  ≡⟨⟩
     rca (y ∷ ys) (x ∷ xs) c
   ∎
 
@@ -104,8 +117,13 @@ rca-carry-lift-inc (x ∷ xs) (y ∷ ys) with x ∧ y in h1
   ∎
 ...   | O = refl
 
+inc?-lift : ∀ {n} (xs ys : Binary n) (b : Bit) → 
+  rca xs ys b ≡ (if b then (inc (xs + ys)) else (xs + ys))
+inc?-lift xs ys b with b
+... | O = refl
+... | I rewrite rca-carry-lift-inc xs ys = refl
+
 rca-inc-liftˡ : ∀ {n} (xs ys : Binary n) (c : Bit) → rca (inc xs) ys c ≡ inc (rca xs ys c)
-rca-inc-liftˡ [] [] _ = refl
 rca-inc-liftˡ xs ys O = begin
     rca (inc xs) ys O
   ≡⟨ sym (rca-carry-transpose-incˡ xs ys) ⟩
@@ -113,36 +131,12 @@ rca-inc-liftˡ xs ys O = begin
   ≡⟨ rca-carry-lift-inc xs ys ⟩
     inc (rca xs ys O)
   ∎
-rca-inc-liftˡ (x ∷ xs) (y ∷ ys) I with x | y
-... | O | O = begin
-    rca (inc (O ∷ xs)) (O ∷ ys) I
-  ≡⟨⟩
-    rca (I ∷ xs) (O ∷ ys) I
-  ≡⟨⟩
-    O ∷ rca xs ys I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc xs ys) ⟩
-    O ∷ inc (rca xs ys O)
-  ≡⟨⟩
-    inc (I ∷ rca xs ys O)
-  ∎
-... | I | O = begin
-    rca (inc (I ∷ xs)) (O ∷ ys) I
-  ≡⟨⟩
-    I ∷ rca (inc xs) ys O
-  ≡⟨ cong (I ∷_) (sym (rca-carry-transpose-incˡ xs ys)) ⟩
-    I ∷ rca xs ys I
-  ≡⟨⟩
-    inc (O ∷ rca xs ys I)
-  ∎
-... | O | I = refl
-... | I | I = begin
-    rca (inc (I ∷ xs)) (I ∷ ys) I
-  ≡⟨⟩
-    O ∷ rca (inc xs) ys I
-  ≡⟨ cong (O ∷_) (rca-inc-liftˡ xs ys I) ⟩
-    O ∷ inc (rca xs ys I)
-  ≡⟨⟩
-    inc (I ∷ rca xs ys I)
+rca-inc-liftˡ xs ys I = begin
+    rca (inc xs) ys I
+  ≡⟨ rca-carry-lift-inc (inc xs) ys ⟩
+    inc (rca (inc xs) ys O)
+  ≡⟨ cong (inc) (sym (rca-carry-transpose-incˡ xs ys)) ⟩
+    inc (rca xs ys I)
   ∎
 
 rca-inc-liftʳ : ∀ {n} (xs ys : Binary n) (c : Bit) → rca xs (inc ys) c ≡ inc (rca xs ys c)
@@ -166,7 +160,6 @@ rca-inc-comm xs ys c = begin
   ∎
 
 rca-carry-commˡ : ∀ {n} (xs ys zs : Binary n) (c c' : Bit) → rca (rca xs ys c) zs c' ≡ rca (rca xs ys c') zs c
-rca-carry-commˡ [] [] [] _ _ = refl
 rca-carry-commˡ xs ys zs c c' with c | c'
 ... | O | O = refl
 ... | I | O = begin
@@ -433,6 +426,12 @@ module Algebra {n} where
 ~-+-ones (x ∷ xs) with x
 ... | O rewrite ~-+-ones xs = refl
 ... | I rewrite ~-+-ones xs = refl
+
+~≡ones-sub : ∀ {n} (xs : Binary n) → ~ xs ≡ (ones n) - xs
+~≡ones-sub [] = refl
+~≡ones-sub {suc n} (x ∷ xs) with x
+... | O rewrite cong (I ∷_) (~≡ones-sub xs) = refl
+... | I rewrite cong (O ∷_) (~≡ones-sub xs) | rca-carry-transpose-incʳ (ones n) (~ xs) = refl
 
 +-ones≡dec : ∀ {n} (xs : Binary n) → xs + ones n ≡ dec xs
 +-ones≡dec [] = refl

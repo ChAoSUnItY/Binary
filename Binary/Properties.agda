@@ -142,6 +142,15 @@ dec-inc-elim (x ∷ xs) with x
 ∥-idem : ∀ {n} (xs : Binary n) → xs ∥ xs ≡ xs
 ∥-idem = zipWith-idem (∨-idem)
 
+∥-distrib-&ˡ : ∀ {n} (xs ys zs : Binary n) → xs ∥ (ys & zs) ≡ ((xs ∥ ys) & (xs ∥ zs))
+∥-distrib-&ˡ = zipWith-distribˡ (∨-distribˡ-∧)
+
+∥-distrib-&ʳ : ∀ {n} (xs ys zs : Binary n) → (ys & zs) ∥ xs ≡ ((ys ∥ xs) & (zs ∥ xs))
+∥-distrib-&ʳ = zipWith-distribʳ (∨-distribʳ-∧)
+
+∥-abs-& : ∀ {n} (xs ys : Binary n) → xs ∥ (xs & ys) ≡ xs
+∥-abs-& = zipWith-absorbs (∨-abs-∧)
+
 -- and properties
 &-assoc : ∀ {n} (xs ys zs : Binary n) → (xs & ys) & zs ≡ xs & (ys & zs)
 &-assoc = zipWith-assoc (∧-assoc)
@@ -170,7 +179,20 @@ dec-inc-elim (x ∷ xs) with x
 &-idem : ∀ {n} (xs : Binary n) → xs & xs ≡ xs
 &-idem = zipWith-idem (∧-idem)
 
+&-distrib-∥ˡ : ∀ {n} (xs ys zs : Binary n) → xs & (ys ∥ zs) ≡ ((xs & ys) ∥ (xs & zs))
+&-distrib-∥ˡ = zipWith-distribˡ (∧-distribˡ-∨)
+
+&-distrib-∥ʳ : ∀ {n} (xs ys zs : Binary n) → (ys ∥ zs) & xs ≡ ((ys & xs) ∥ (zs & xs))
+&-distrib-∥ʳ = zipWith-distribʳ (∧-distribʳ-∨)
+
+&-abs-∥ : ∀ {n} (xs ys : Binary n) → xs & (xs ∥ ys) ≡ xs
+&-abs-∥ = zipWith-absorbs (∧-abs-∨)
+
 -- xor properties
+^-is-ok : ∀ {n} (xs ys : Binary n) → xs ^ ys ≡ (xs ∥ ys) & ~ (xs & ys)
+^-is-ok [] [] = refl
+^-is-ok (x ∷ xs) (y ∷ ys) rewrite ^-is-ok xs ys | xor-is-ok x y = refl
+
 ^-assoc : ∀ {n} (xs ys zs : Binary n) → (xs ^ ys) ^ zs ≡ xs ^ (ys ^ zs)
 ^-assoc = zipWith-assoc (xor-assoc)
 
@@ -215,7 +237,7 @@ dec-inc-elim (x ∷ xs) with x
   ∎
   where
     drop-++-distrubʳ : ∀ {n k} (xs : Binary (suc n)) (ys : Binary k) 
-                     → drop n (cast (sym (+-suc n k)) (xs ++ ys)) ≡ drop n (cast (+-comm _ n) xs) ++ ys
+                    → drop n (cast (sym (+-suc n k)) (xs ++ ys)) ≡ drop n (cast (+-comm _ n) xs) ++ ys
     drop-++-distrubʳ {ℕ.zero} {_} (x ∷ []) ys rewrite cast-is-id refl ys = refl
     drop-++-distrubʳ {suc n}  {_} (x ∷ xs) ys = drop-++-distrubʳ xs ys
 

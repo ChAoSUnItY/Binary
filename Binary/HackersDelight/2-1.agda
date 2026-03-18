@@ -73,47 +73,28 @@ not-∨-distrib x y with x
   ∎
 ... | I = refl
 
+~-nneg≡dec : ∀ {n} (xs : Binary n) → ~ (- xs) ≡ dec xs
+~-nneg≡dec xs = begin
+    ~ (- xs)
+  ≡⟨⟩
+    ~ (inc (~ xs))
+  ≡⟨ cong (~_) (sym (~-dec≡inc-~ xs)) ⟩
+    ~ (~ dec xs)
+  ≡⟨ ~-involutive (dec xs) ⟩
+    dec xs
+  ∎
+
 ~-^≡~ˡ-^ : ∀ {n} (xs ys : Binary n) → ~ (xs ^ ys) ≡ (~ xs) ^ ys
 ~-^≡~ˡ-^ [] [] = refl
-~-^≡~ˡ-^ (x ∷ xs) (y ∷ ys) with x
-... | O = begin
-    (not y) ∷ ~ (xs ^ ys)
-  ≡⟨ cong ((not y) ∷_) (~-^≡~ˡ-^ xs ys) ⟩
-    (not y) ∷ (~ xs) ^ ys
-  ∎
-... | I = begin
-    not (not y) ∷ ~ (xs ^ ys)
-  ≡⟨ cong₂ (_∷_) (not-involutive y) (~-^≡~ˡ-^ xs ys) ⟩
-    y ∷  (~ xs) ^ ys
-  ∎
+~-^≡~ˡ-^ (x ∷ xs) (y ∷ ys) rewrite not-distribˡ-xor x y | ~-^≡~ˡ-^ xs ys = refl
 
 ~-^≡== : ∀ {n} (xs ys : Binary n) → ~ (xs ^ ys) ≡ xs == ys
 ~-^≡== [] [] = refl
-~-^≡== (x ∷ xs) (y ∷ ys) with x
-... | O = begin
-    (not y) ∷ ~ (xs ^ ys)
-  ≡⟨ cong ((not y) ∷_) (~-^≡== xs ys) ⟩
-    (not y) ∷ xs == ys
-  ∎
-... | I = begin
-    not (not y) ∷ ~ (xs ^ ys)
-  ≡⟨ cong₂ (_∷_) (not-involutive y) (~-^≡== xs ys) ⟩
-    y ∷ xs == ys
-  ∎
+~-^≡== (x ∷ xs) (y ∷ ys) rewrite not-distribˡ-xor x y | ~-^≡== xs ys = refl
 
 ~-==≡~ˡ-== : ∀ {n} (xs ys : Binary n) → ~ (xs == ys) ≡ (~ xs) == ys
 ~-==≡~ˡ-== [] [] = refl
-~-==≡~ˡ-== (x ∷ xs) (y ∷ ys) with x
-... | O = begin
-    not (not y) ∷ ~ (xs == ys)
-  ≡⟨ cong₂ (_∷_) (not-involutive y) (~-==≡~ˡ-== xs ys) ⟩
-    y ∷ (~ xs) == ys
-  ∎
-... | I = begin
-    (not y) ∷ ~ (xs == ys)
-  ≡⟨ cong ((not y) ∷_) (~-==≡~ˡ-== xs ys) ⟩
-    (not y) ∷ (~ xs) == ys
-  ∎
+~-==≡~ˡ-== (x ∷ xs) (y ∷ ys) rewrite not-distribˡ-xor x y | ~-==≡~ˡ-== xs ys = refl
 
 ~-==≡^ : ∀ {n} (xs ys : Binary n) → ~ (xs == ys) ≡ xs ^ ys
 ~-==≡^ xs ys = begin

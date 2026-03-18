@@ -65,8 +65,7 @@ _^_ = zipWith (_xor_)
 
 -- Bitwise exclusive NOR
 _xnor_ : Bit → Bit → Bit
-O xnor y = not y
-I xnor y = y
+x xnor y = not (x xor y)
 
 _==_ : ∀ {n} → Binary n → Binary n → Binary n
 _==_ = zipWith (_xnor_)
@@ -109,3 +108,17 @@ instance
 
 _>>ˢ_ : ∀ {n} (xs : Binary (suc n)) (k : ℕ) {{_ : k ≤ n}} → Binary (suc n)
 _>>ˢ_ xs k = drop k (cast (+-comm _ k) (xs ++ replicate k (last xs)))
+
+infix  9  ~_ -_
+infixl 9  _<<_ _>>_ _>>ˢ_
+infixl 8  _+_ _-_
+infixl 7  _&_
+infixl 6  _^_ _==_ _∥_
+
+-- Pragmas to make the code more readable
+{-# DISPLAY inc (map not xs) = - xs #-}
+{-# DISPLAY map not xs = ~ xs #-}
+{-# DISPLAY Data.Vec.zipWith _∧_ xs ys = xs & ys  #-}
+{-# DISPLAY Data.Vec.zipWith _∨_ xs ys = xs ∥ ys  #-}
+{-# DISPLAY Data.Vec.zipWith _xor_ xs ys = xs ^ ys  #-}
+{-# DISPLAY rca xs ys O = xs + ys  #-}

@@ -12,45 +12,25 @@ open import Function.Base
 open import Binary.Base
 open import Binary.Properties
 open import Binary.AddProperties
+open import Binary.HackersDelight.2-1
 
 -- Equation (a), trivial as it's just definition of 2's complement.
-nneg≡inc-~ : ∀ {n} (xs : Binary n) → - xs ≡ inc (~ xs)
-nneg≡inc-~ xs = refl 
+eq-a : ∀ {n} (xs : Binary n) → - xs ≡ inc (~ xs)
+eq-a xs = refl
 
 -- Equation (b)
-nneg≡~-dec : ∀ {n} (xs : Binary n) → - xs ≡ ~ (dec xs)
-nneg≡~-dec [] = refl
-nneg≡~-dec {n} xs = begin
+eq-b : ∀ {n} (xs : Binary n) → - xs ≡ ~ (dec xs)
+eq-b xs = begin
     - xs
-  ≡⟨ sym (~-involutive (- xs)) ⟩
-    (~ (~ (- xs)))
-  ≡⟨ cong (~_) (~-nneg≡dec xs) ⟩
+  ≡⟨⟩
+    inc (~ xs)
+  ≡⟨ sym (~-dec≡inc-~ xs) ⟩
     ~ (dec xs)
   ∎
-  where
-    -- Also showed in equation (c)
-    ~≡nneg-dec : ∀ {n} (xs : Binary n) → ~ xs ≡ dec (- xs)
-    ~≡nneg-dec xs = begin
-        ~ xs
-      ≡⟨ sym (dec-inc-elim (~ xs)) ⟩
-        dec (inc (~ xs))
-      ≡⟨⟩
-        dec (- xs)
-      ∎
-
-    -- Also showed in equation (e)
-    ~-nneg≡dec : ∀ {n} (xs : Binary n) → ~ (- xs) ≡ dec xs
-    ~-nneg≡dec xs = begin
-        (~ (- xs))
-      ≡⟨ ~≡nneg-dec (- xs) ⟩
-        dec (- (- xs))
-      ≡⟨ cong (dec) (nneg-involutive xs) ⟩
-        dec xs
-      ∎
 
 -- Equation (c)
-~≡nneg-dec : ∀ {n} (xs : Binary n) → ~ xs ≡ dec (- xs)
-~≡nneg-dec xs = begin
+eq-c : ∀ {n} (xs : Binary n) → ~ xs ≡ dec (- xs)
+eq-c xs = begin
     ~ xs
   ≡⟨ sym (dec-inc-elim (~ xs)) ⟩
     dec (inc (~ xs))
@@ -59,8 +39,8 @@ nneg≡~-dec {n} xs = begin
   ∎
 
 -- Equation (d)
-nneg-~≡inc : ∀ {n} (xs : Binary n) → - (~ xs) ≡ inc xs
-nneg-~≡inc xs = begin
+eq-d : ∀ {n} (xs : Binary n) → - (~ xs) ≡ inc xs
+eq-d xs = begin
     - (~ xs)
   ≡⟨⟩
     inc (~ (~ xs))
@@ -69,18 +49,12 @@ nneg-~≡inc xs = begin
   ∎
 
 -- Equation (e)
-~-nneg≡dec : ∀ {n} (xs : Binary n) → ~ (- xs) ≡ dec xs
-~-nneg≡dec xs = begin
-    (~ (- xs))
-  ≡⟨ ~≡nneg-dec (- xs) ⟩
-    dec (- (- xs))
-  ≡⟨ cong (dec) (nneg-involutive xs) ⟩
-    dec xs
-  ∎
+eq-e : ∀ {n} (xs : Binary n) → ~ (- xs) ≡ dec xs
+eq-e xs = ~-nneg≡dec xs
 
 -- Equation (f)
-+≡--~-dec : ∀ {n} (xs ys : Binary n) → xs + ys ≡ dec (xs - (~ ys))
-+≡--~-dec xs ys = begin
+eq-f : ∀ {n} (xs ys : Binary n) → xs + ys ≡ dec (xs - (~ ys))
+eq-f xs ys = begin
     xs + ys
   ≡⟨ cong (xs +_) (sym (~-involutive ys)) ⟩
     xs + (~ (~ ys))
@@ -91,88 +65,63 @@ nneg-~≡inc xs = begin
   ∎
 
 -- Equation (g)
-HACKMEM-item-23-a : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ^ ys) + ((xs & ys) + (xs & ys))
-HACKMEM-item-23-a [] [] = refl
-HACKMEM-item-23-a (x ∷ xs) (y ∷ ys) rewrite xor-same (x ∧ y)
-                                          | xor-identityʳ (x xor y)
-                                          | xor-identityʳ (x xor y)
-                                          | ∨-identityʳ (x ∧ y) = {!   !}
+eq-g : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ^ ys) + ((xs & ys) + (xs & ys))
+eq-g [] [] = refl
+eq-g (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
+                             | eq-g xs ys with add-result x y
+... | case-zero h1 h2 rewrite h1
+                            | h2 
+                            = refl
+... | case-one x∧y _ x⊕y rewrite x∧y
+                               | x⊕y 
+                               = refl
+... | case-carry h1 h2 rewrite h1
+                             | h2
+                             | rca-carry-lift-inc (xs & ys) (xs & ys)
+                             | rca-inc-liftʳ (xs ^ ys) ((xs & ys) + (xs & ys)) O 
+                             = refl
 
 -- Equation (h)
-HACKMEM-item-23-b : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ∥ ys) + (xs & ys)
-HACKMEM-item-23-b [] [] = refl
-HACKMEM-item-23-b (x ∷ xs) (y ∷ ys) with x | y
-... | O | O = begin
-    O ∷ xs + ys
-  ≡⟨ cong (O ∷_) (HACKMEM-item-23-b xs ys) ⟩
-    O ∷ (xs ∥ ys) + (xs & ys)
-  ∎
-... | I | O = begin
-    I ∷ xs + ys
-  ≡⟨ cong (I ∷_) (HACKMEM-item-23-b xs ys) ⟩
-    I ∷ (xs ∥ ys) + (xs & ys)
-  ∎
-... | O | I = begin
-    I ∷ xs + ys
-  ≡⟨ cong (I ∷_) (HACKMEM-item-23-b xs ys) ⟩
-    I ∷ (xs ∥ ys) + (xs & ys)
-  ∎
-... | I | I = begin
-    O ∷ rca xs ys I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc xs ys) ⟩
-    O ∷ inc (xs + ys)
-  ≡⟨ cong (λ l → O ∷ inc l) (HACKMEM-item-23-b xs ys) ⟩
-    O ∷ inc (rca (xs ∥ ys) (xs & ys) O)
-  ≡⟨ cong (O ∷_) (sym (rca-carry-lift-inc (xs ∥ ys) (xs & ys))) ⟩
-    O ∷ rca (xs ∥ ys) (xs & ys) I
-  ∎
+eq-h : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ∥ ys) + (xs & ys)
+eq-h [] [] = refl
+eq-h (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
+                             | eq-h xs ys with add-result x y
+... | case-zero h1 h2 rewrite h1
+                            | h2 
+                            = refl
+... | case-one x∧y x∨y x⊕y rewrite x∧y
+                                 | x∨y
+                                 | x⊕y 
+                                 = refl
+... | case-carry h1 h2 rewrite h1
+                             | h2
+                             | sym (rca-carry-lift-inc (xs ∥ ys) (xs & ys)) 
+                             = refl
 
 -- Equation (i)
-+≡∥-+-∥-+-^ : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
-+≡∥-+-∥-+-^ [] [] = refl
-+≡∥-+-∥-+-^ (x ∷ xs) (y ∷ ys) with x | y
-... | O | O = begin
-    O ∷ xs + ys
-  ≡⟨ cong (O ∷_) (+≡∥-+-∥-+-^ xs ys) ⟩
-    O ∷ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
-  ∎
-... | I | O = begin
-    I ∷ xs + ys
-  ≡⟨ cong (I ∷_) (+≡∥-+-∥-+-^ xs ys) ⟩
-    I ∷ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
-  ≡⟨⟩
-    I ∷ ((xs ∥ ys) + (xs ∥ ys)) + inc (~ (xs ^ ys))
-  ≡⟨ cong (I ∷_) (sym (rca-inc-comm ((xs ∥ ys) + (xs ∥ ys)) (~ (xs ^ ys)) O)) ⟩
-    I ∷ (inc ((xs ∥ ys) + (xs ∥ ys))) + (~ (xs ^ ys))
-  ≡⟨ cong (λ l → I ∷ l + (~ (xs ^ ys))) (sym (rca-carry-lift-inc (xs ∥ ys) (xs ∥ ys))) ⟩
-    I ∷ (rca (xs ∥ ys) (xs ∥ ys) I) + (~ (xs ^ ys))
-  ∎
-... | O | I = begin
-    I ∷ xs + ys
-  ≡⟨ cong (I ∷_) (+≡∥-+-∥-+-^ xs ys) ⟩
-    I ∷ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
-  ≡⟨⟩
-    I ∷ ((xs ∥ ys) + (xs ∥ ys)) + inc (~ (xs ^ ys))
-  ≡⟨ cong (I ∷_) (sym (rca-inc-comm ((xs ∥ ys) + (xs ∥ ys)) (~ (xs ^ ys)) O)) ⟩
-    I ∷ (inc ((xs ∥ ys) + (xs ∥ ys))) + (~ (xs ^ ys))
-  ≡⟨ cong (λ l → I ∷ l + (~ (xs ^ ys))) (sym (rca-carry-lift-inc (xs ∥ ys) (xs ∥ ys))) ⟩
-    I ∷ (rca (xs ∥ ys) (xs ∥ ys) I) + (~ (xs ^ ys))
-  ∎
-... | I | I = begin
-    O ∷ rca xs ys I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc xs ys) ⟩
-    O ∷ inc (xs + ys)
-  ≡⟨ cong (λ l → O ∷ inc l) (+≡∥-+-∥-+-^ xs ys) ⟩
-    O ∷ inc (((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys))
-  ≡⟨ cong (O ∷_) (sym (rca-inc-liftˡ ((xs ∥ ys) + (xs ∥ ys)) (- (xs ^ ys)) O)) ⟩
-    O ∷ inc ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
-  ≡⟨ cong (λ l → O ∷ (l - (xs ^ ys))) (sym (rca-carry-lift-inc (xs ∥ ys) (xs ∥ ys))) ⟩
-    O ∷ (rca (xs ∥ ys) (xs ∥ ys) I) - (xs ^ ys)
-  ∎
+eq-i : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
+eq-i [] [] = refl
+eq-i (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
+                             | eq-i xs ys with add-result x y
+... | case-zero h1 h2 rewrite h1
+                            | h2 
+                            = refl
+... | case-one x∧y x∨y x⊕y rewrite x∧y
+                                 | x∨y
+                                 | x⊕y
+                                 | sym (rca-inc-comm ((xs ∥ ys) + (xs ∥ ys)) (~ (xs ^ ys)) O)
+                                 | sym (rca-carry-lift-inc (xs ∥ ys) (xs ∥ ys)) 
+                                 = refl
+... | case-carry h1 h2 rewrite h1
+                             | h2
+                             | sym (rca-carry-lift-inc ((xs ∥ ys) + (xs ∥ ys)) (- (xs ^ ys)))
+                             | rca-carry-transpose-incˡ ((xs ∥ ys) + (xs ∥ ys)) (- (xs ^ ys))
+                             | sym (rca-carry-lift-inc (xs ∥ ys) (xs ∥ ys)) 
+                             = refl
 
 -- Equation (j)
--≡+-~-+ : ∀ {n} (xs ys : Binary n) → xs - ys ≡ inc (xs + (~ ys))
--≡+-~-+ xs ys = begin
+eq-j : ∀ {n} (xs ys : Binary n) → xs - ys ≡ inc (xs + (~ ys))
+eq-j xs ys = begin
     xs - ys
   ≡⟨⟩
     xs + inc (~ ys)
@@ -181,23 +130,189 @@ HACKMEM-item-23-b (x ∷ xs) (y ∷ ys) with x | y
   ∎
 
 -- Equation (k)
---
--- This theorem is extremely hard to be written in reasoning chain,
--- we'll leave this to readers :)
-HACKMEM-item-23-a-dual : ∀ {n} (xs ys : Binary n) → xs - ys ≡ ((xs ^ ys) - ((~ xs) & ys)) - ((~ xs) & ys)
-HACKMEM-item-23-a-dual [] [] = refl
-HACKMEM-item-23-a-dual {suc n} (x ∷ xs) (y ∷ ys) with x | y
-... | O | O rewrite HACKMEM-item-23-a-dual xs ys = refl
-... | I | O rewrite HACKMEM-item-23-a-dual xs ys = refl
-... | O | I rewrite rca-carry-transpose-incʳ (xs ^ ys) (~ ((~ xs) & ys)) = inc-inj (
-  begin
-    inc (I ∷ xs + (~ ys))
-  ≡⟨⟩
-    O ∷ inc (xs + (~ ys))
-  ≡⟨ cong (O ∷_) (trans (sym (rca-inc-liftʳ xs (~ ys) O)) (HACKMEM-item-23-a-dual xs ys)) ⟩
-    O ∷ (((xs ^ ys) - ((~ xs) & ys)) - ((~ xs) & ys))
-  ≡⟨ cong (O ∷_) (rca-inc-liftʳ ((xs ^ ys) - ((~ xs) & ys)) (~ ((~ xs) & ys)) O) ⟩
-    inc (I ∷ ((xs ^ ys) - ((~ xs) & ys)) + (~ ((~ xs) & ys)))
-  ∎)
-... | I | I rewrite rca-carry-transpose-incʳ xs (~ ys) 
-                  | HACKMEM-item-23-a-dual xs ys = refl
+eq-k : ∀ {n} (xs ys : Binary n) → xs - ys ≡ ((xs ^ ys) - ((~ xs) & ys)) - ((~ xs) & ys)
+eq-k xs ys = begin
+    xs - ys
+  ≡⟨ sym (~-involutive (xs - ys)) ⟩
+    ~ (~ (xs - ys))
+  ≡⟨ cong (~_) (~--≡~ˡ-+ xs ys) ⟩
+    ~ ((~ xs) + ys)
+  ≡⟨ cong (~_) (eq-g (~ xs) ys) ⟩
+    ~ (((~ xs) ^ ys) + (((~ xs) & ys) + ((~ xs) & ys)))
+  ≡⟨ ~-+≡~ˡ-- ((~ xs) ^ ys) (((~ xs) & ys) + ((~ xs) & ys)) ⟩
+    (~ ((~ xs) ^ ys)) - (((~ xs) & ys) + ((~ xs) & ys))
+  ≡⟨ cong (λ l → (~ l) - (((~ xs) & ys) + ((~ xs) & ys))) (sym (~-^≡~ˡ-^ xs ys)) ⟩
+    (~ (~ (xs ^ ys))) - (((~ xs) & ys) + ((~ xs) & ys))
+  ≡⟨ cong (λ l → l - (((~ xs) & ys) + ((~ xs) & ys))) (~-involutive (xs ^ ys)) ⟩
+    (xs ^ ys) - (((~ xs) & ys) + ((~ xs) & ys))
+  ≡⟨ cong ((xs ^ ys) +_) (nneg-distrib ((~ xs) & ys) ((~ xs) & ys)) ⟩
+    (xs ^ ys) + ((- ((~ xs) & ys)) + (- ((~ xs) & ys)))
+  ≡⟨ sym (+-assoc (xs ^ ys) (- ((~ xs) & ys)) (- ((~ xs) & ys))) ⟩
+    ((xs ^ ys) - ((~ xs) & ys)) - ((~ xs) & ys)
+  ∎
+
+-- Eqaution (l)
+eq-l : ∀ {n} (xs ys : Binary n) → xs - ys ≡ (xs & (~ ys)) - ((~ xs) & ys)
+eq-l xs ys = begin
+    xs - ys
+  ≡⟨ sym (~-involutive (xs - ys)) ⟩
+    ~ (~ (xs - ys))
+  ≡⟨ cong (~_) (~--≡~ˡ-+ xs ys) ⟩
+    ~ ((~ xs) + ys)
+  ≡⟨ cong (~_) (eq-h (~ xs) ys) ⟩
+    (~ (((~ xs) ∥ ys) + ((~ xs) & ys)))
+  ≡⟨ ~-+≡~ˡ-- ((~ xs) ∥ ys) ((~ xs) & ys) ⟩
+    ~ (~ xs ∥ ys) - (~ xs & ys)
+  ≡⟨ cong (λ l → l - (~ xs & ys)) (~-∥-distrib (~ xs) ys) ⟩
+    (~ (~ xs) & ~ ys) - (~ xs & ys)
+  ≡⟨ cong (λ l → (l & ~ ys) - (~ xs & ys)) (~-involutive xs) ⟩
+    (xs & ~ ys) - (~ xs & ys)
+  ∎
+
+-- Eqaution (m)
+eq-m : ∀ {n} (xs ys : Binary n) → xs - ys ≡ ((xs & ~ ys) + (xs & ~ ys)) - (xs ^ ys)
+eq-m xs ys = begin
+    xs - ys
+  ≡⟨ eq-j xs ys ⟩
+    inc (xs + ~ ys)
+  ≡⟨ cong inc (eq-g xs (~ ys)) ⟩
+    inc ((xs ^ ~ ys) + ((xs & ~ ys) + (xs & ~ ys)))
+  ≡⟨ cong (λ l → inc (l + ((xs & ~ ys) + (xs & ~ ys)))) (^-comm xs (~ ys)) ⟩
+    inc ((~ ys ^ xs) + ((xs & ~ ys) + (xs & ~ ys)))
+  ≡⟨ cong (λ l → inc (l + ((xs & ~ ys) + (xs & ~ ys)))) (sym (~-^≡~ˡ-^ ys xs)) ⟩
+    inc (~ (ys ^ xs) + ((xs & ~ ys) + (xs & ~ ys)))
+  ≡⟨ cong (λ l → inc (~ l + ((xs & ~ ys) + (xs & ~ ys)))) (^-comm ys xs) ⟩
+    inc (~ (xs ^ ys) + ((xs & ~ ys) + (xs & ~ ys)))
+  ≡⟨ cong inc (+-comm (~ (xs ^ ys)) ((xs & ~ ys) + (xs & ~ ys))) ⟩
+    inc (((xs & ~ ys) + (xs & ~ ys)) + ~ (xs ^ ys))
+  ≡⟨ sym (eq-j ((xs & ~ ys) + (xs & ~ ys)) (xs ^ ys)) ⟩
+    ((xs & ~ ys) + (xs & ~ ys)) - (xs ^ ys)
+  ∎
+
+-- Eqaution (n)
+eq-n : ∀ {n} (xs ys : Binary n) → xs ^ ys ≡ (xs ∥ ys) - (xs & ys)
+eq-n [] [] = refl
+eq-n (x ∷ xs) (y ∷ ys) rewrite eq-n xs ys with add-result x y
+... | case-zero h1 h2 rewrite h1
+                            | h2 
+                            = refl
+... | case-one x∧y x∨y x⊕y rewrite x∧y
+                                 | x∨y
+                                 | x⊕y
+                                 = refl
+... | case-carry h1 h2 rewrite h1
+                             | h2
+                             | rca-carry-transpose-incʳ (xs ∥ ys) (~ (xs & ys))
+                             = refl
+
+-- Eqaution (o)
+eq-o : ∀ {n} (xs ys : Binary n) → xs & (~ ys) ≡ (xs ∥ ys) - ys
+eq-o [] [] = refl
+eq-o (x ∷ xs) (y ∷ ys) rewrite eq-o xs ys with x | y
+... | O | O = refl
+... | O | I rewrite sym (rca-carry-transpose-incʳ (xs ∥ ys) (~ ys)) = refl
+... | I | O = refl
+... | I | I rewrite sym (rca-carry-transpose-incʳ (xs ∥ ys) (~ ys)) = refl
+
+-- Eqaution (p)
+eq-p : ∀ {n} (xs ys : Binary n) → xs & (~ ys) ≡ xs - (xs & ys)
+eq-p [] [] = refl
+eq-p (x ∷ xs) (y ∷ ys) rewrite eq-p xs ys with x | y
+... | O | O = refl
+... | O | I = refl
+... | I | O = refl
+... | I | I rewrite rca-carry-transpose-incʳ (xs) (~ (xs & ys)) = refl
+
+-- Eqaution (q)
+eq-q : ∀ {n} (xs ys : Binary n) → ~ (xs - ys) ≡ dec (ys - xs)
+eq-q {n} xs ys = begin
+    ~ (xs - ys)
+  ≡⟨ ~--≡~ˡ-+ xs ys ⟩
+    ~ xs + ys
+  ≡⟨ cong (λ l → l + ys) (eq-c xs) ⟩
+    dec (- xs) + ys
+  ≡⟨ cong (_+ ys) (sym (+-ones≡dec (- xs))) ⟩
+    - xs + ones n + ys
+  ≡⟨ +-assoc (- xs) (ones n) ys ⟩
+    - xs + (ones n + ys)
+  ≡⟨ cong (- xs +_) (+-comm (ones n) ys) ⟩
+    - xs + (ys + ones n)
+  ≡⟨ sym (+-assoc (- xs) ys (ones n)) ⟩
+    - xs + ys + ones n
+  ≡⟨ cong (_+ ones n) (+-comm (- xs) ys) ⟩
+    ys - xs + ones n
+  ≡⟨ +-ones≡dec (ys - xs) ⟩
+    dec (ys - xs)
+  ∎
+
+-- Eqaution (r)
+eq-r : ∀ {n} (xs ys : Binary n) → ~ (xs - ys) ≡ (~ xs) + ys
+eq-r xs ys = ~--≡~ˡ-+ xs ys
+
+-- Eqaution (s)
+eq-s : ∀ {n} (xs ys : Binary n) → xs == ys ≡ dec ((xs & ys) - (xs ∥ ys))
+eq-s xs ys = begin
+    xs == ys
+  ≡⟨ sym (~-^≡== xs ys) ⟩
+    ~ (xs ^ ys)
+  ≡⟨ eq-c (xs ^ ys) ⟩
+    dec (- (xs ^ ys))
+  ≡⟨ cong (λ l → dec (- l)) (eq-n xs ys) ⟩
+    dec (- ((xs ∥ ys) - (xs & ys)))
+  ≡⟨ cong dec (nneg-distrib (xs ∥ ys) (- (xs & ys))) ⟩
+    dec (- (xs ∥ ys) + - (- (xs & ys)))
+  ≡⟨ cong (λ l → dec (- (xs ∥ ys) + l)) (nneg-involutive (xs & ys)) ⟩
+    dec (- (xs ∥ ys) + (xs & ys))
+  ≡⟨ cong dec (+-comm (- (xs ∥ ys)) (xs & ys)) ⟩
+    dec ((xs & ys) - (xs ∥ ys))
+  ∎
+
+-- Eqaution (t)
+eq-t : ∀ {n} (xs ys : Binary n) → xs == ys ≡ (xs & ys) + ~ (xs ∥ ys)
+eq-t xs ys = begin
+    xs == ys
+  ≡⟨ eq-s xs ys ⟩
+    dec ((xs & ys) - (xs ∥ ys))
+  ≡⟨ sym (eq-e ((xs & ys) - (xs ∥ ys))) ⟩
+    ~ (- ((xs & ys) - (xs ∥ ys)))
+  ≡⟨ cong (~_) (nneg-distrib (xs & ys) (- (xs ∥ ys))) ⟩
+    ~ (- (xs & ys) + - (- (xs ∥ ys)))
+  ≡⟨ cong (λ l → ~ (- (xs & ys) + l)) (nneg-involutive (xs ∥ ys)) ⟩
+    ~ (- (xs & ys) + (xs ∥ ys))
+  ≡⟨ ~-+≡~ˡ-- (- (xs & ys)) (xs ∥ ys) ⟩
+    ~ (- (xs & ys)) - (xs ∥ ys)
+  ≡⟨ cong (λ l → l - (xs ∥ ys)) (~-nneg≡dec (xs & ys)) ⟩
+    dec (xs & ys) - (xs ∥ ys)
+  ≡⟨ sym (rca-inc-comm (dec (xs & ys)) (~ (xs ∥ ys)) O) ⟩
+    inc (dec (xs & ys)) + ~ (xs ∥ ys)
+  ≡⟨ cong (λ l → l + ~ (xs ∥ ys)) (inc-dec-elim (xs & ys)) ⟩
+    (xs & ys) + ~ (xs ∥ ys)
+  ∎
+
+-- Eqaution (u)
+eq-u : ∀ {n} (xs ys : Binary n) → xs ∥ ys ≡ (xs & ~ ys) + ys
+eq-u {n} xs ys = begin
+    xs ∥ ys
+  ≡⟨ sym (+-identityʳ (xs ∥ ys)) ⟩
+    (xs ∥ ys) + zero n
+  ≡⟨ cong ((xs ∥ ys) +_) (sym (+-elimˡ ys)) ⟩
+    (xs ∥ ys) + (- ys + ys)
+  ≡⟨ sym (+-assoc (xs ∥ ys) (- ys) ys) ⟩
+    (xs ∥ ys) - ys + ys
+  ≡⟨ cong (λ l → l + ys) (sym (eq-o xs ys)) ⟩
+    (xs & ~ ys) + ys
+  ∎
+
+-- Eqaution (v)
+eq-v : ∀ {n} (xs ys : Binary n) → xs & ys ≡ ((~ xs) ∥ ys) - ~ xs
+eq-v {n} xs ys = begin
+    xs & ys
+  ≡⟨ &-comm xs ys ⟩
+    ys & xs
+  ≡⟨ cong (ys &_) (sym (~-involutive xs)) ⟩
+    ys & ~ (~ xs)
+  ≡⟨ eq-o ys (~ xs) ⟩
+    (ys ∥ ~ xs) - ~ xs
+  ≡⟨ cong (λ l → l - ~ xs) (∥-comm ys (~ xs)) ⟩
+    (~ xs ∥ ys) - ~ xs
+  ∎
