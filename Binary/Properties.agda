@@ -3,7 +3,7 @@ module Binary.Properties where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; cong; cong₂; cong-app; subst; trans; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
-open import Data.Vec using (Vec; _∷_; []; _++_; map; last; drop; take; replicate; cast; [_])
+open import Data.Vec using (Vec; _∷_; []; _++_; map; last; drop; take; replicate; cast; [_]; zipWith)
 open import Data.Vec.Properties
 open import Data.Vec.Relation.Binary.Equality.Cast
 open import Data.Nat using (ℕ; suc; _≤_; z≤n; s≤s) renaming (_+_ to _+ℕ_)
@@ -16,6 +16,10 @@ open import Binary.Base
 -- Base definition
 cons-inj : ∀ {n} {x y : Bit} {xs ys : Binary n} → (x ∷ xs) ≡ (y ∷ ys) → xs ≡ ys
 cons-inj refl = refl
+
+zipWith-cons : ∀ {n} (x y : Bit) (xs ys : Binary n) (f : Bit → Bit → Bit)
+  → f x y ∷ zipWith f xs ys ≡ zipWith f (x ∷ xs) (y ∷ ys)
+zipWith-cons f x y xs ys = refl
 
 -- Negation properties
 ~-involutive : ∀ {n} (xs : Binary n) → ~ (~ xs) ≡ xs
@@ -185,6 +189,12 @@ dec-inc-elim (x ∷ xs) with x
 &-distrib-∥ʳ : ∀ {n} (xs ys zs : Binary n) → (ys ∥ zs) & xs ≡ ((ys & xs) ∥ (zs & xs))
 &-distrib-∥ʳ = zipWith-distribʳ (∧-distribʳ-∨)
 
+&-distrib-^ˡ : ∀ {n} (xs ys zs : Binary n) → xs & (ys ^ zs) ≡ ((xs & ys) ^ (xs & zs))
+&-distrib-^ˡ = zipWith-distribˡ (∧-distribˡ-xor)
+
+&-distrib-^ʳ : ∀ {n} (xs ys zs : Binary n) → (ys ^ zs) & xs ≡ ((ys & xs) ^ (zs & xs))
+&-distrib-^ʳ = zipWith-distribʳ (∧-distribʳ-xor)
+
 &-abs-∥ : ∀ {n} (xs ys : Binary n) → xs & (xs ∥ ys) ≡ xs
 &-abs-∥ = zipWith-absorbs (∧-abs-∨)
 
@@ -192,6 +202,10 @@ dec-inc-elim (x ∷ xs) with x
 ^-is-ok : ∀ {n} (xs ys : Binary n) → xs ^ ys ≡ (xs ∥ ys) & ~ (xs & ys)
 ^-is-ok [] [] = refl
 ^-is-ok (x ∷ xs) (y ∷ ys) rewrite ^-is-ok xs ys | xor-is-ok x y = refl
+
+ones-^ : ∀ {n} (xs : Binary n) → ones n ^ xs ≡ ~ xs
+ones-^ [] = refl
+ones-^ (x ∷ xs) rewrite true-xor x | ones-^ xs = refl
 
 ^-assoc : ∀ {n} (xs ys zs : Binary n) → (xs ^ ys) ^ zs ≡ xs ^ (ys ^ zs)
 ^-assoc = zipWith-assoc (xor-assoc)
