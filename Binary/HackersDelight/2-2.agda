@@ -67,7 +67,7 @@ eq-f xs ys = begin
 -- Equation (g)
 eq-g : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ^ ys) + ((xs & ys) + (xs & ys))
 eq-g [] [] = refl
-eq-g (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
+eq-g (x ∷ xs) (y ∷ ys) rewrite inc?-lift (x ∧ y ∨ O) xs ys
                              | eq-g xs ys with add-result x y
 ... | case-zero h1 h2 rewrite h1
                             | h2 
@@ -84,7 +84,7 @@ eq-g (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
 -- Equation (h)
 eq-h : ∀ {n} (xs ys : Binary n) → xs + ys ≡ (xs ∥ ys) + (xs & ys)
 eq-h [] [] = refl
-eq-h (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
+eq-h (x ∷ xs) (y ∷ ys) rewrite inc?-lift (x ∧ y ∨ O) xs ys
                              | eq-h xs ys with add-result x y
 ... | case-zero h1 h2 rewrite h1
                             | h2 
@@ -101,7 +101,7 @@ eq-h (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
 -- Equation (i)
 eq-i : ∀ {n} (xs ys : Binary n) → xs + ys ≡ ((xs ∥ ys) + (xs ∥ ys)) - (xs ^ ys)
 eq-i [] [] = refl
-eq-i (x ∷ xs) (y ∷ ys) rewrite inc?-lift xs ys (x ∧ y ∨ O)
+eq-i (x ∷ xs) (y ∷ ys) rewrite inc?-lift (x ∧ y ∨ O) xs ys
                              | eq-i xs ys with add-result x y
 ... | case-zero h1 h2 rewrite h1
                             | h2 

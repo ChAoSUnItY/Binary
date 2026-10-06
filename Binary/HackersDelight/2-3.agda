@@ -63,32 +63,12 @@ inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-tail ys<inc-xs) = i
 inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-tail xs<ys) (lt-head refl ())
 inc-absurd {suc n} {I ∷ xs} {I ∷ ys} (lt-head refl ()) _
 
-abs-sub≡max-sub-min : ∀ {n} (xs ys : Binary (suc n)) → abs-sub xs ys ≡ (maxᵘ xs ys - minᵘ xs ys)
-abs-sub≡max-sub-min {n} xs ys rewrite maxᵘ≡+-dozᵘ xs ys 
-                                    | minᵘ≡sub-dozᵘ xs ys 
-                                    with trichotomyᵘ xs ys
-... | tri-lt _ rewrite nneg-zero≡zero {n}
-                     | +-identityʳ ys
-                     | +-identityʳ xs 
-                     = refl
-... | tri-eq eqh rewrite eqh
-                       | +-elimʳ ys
-                       | +-identityʳ ys
-                       | nneg-zero≡zero {n}
-                       | +-identityʳ ys
-                       | +-elimʳ ys
-                       = refl
-... | tri-gt _ rewrite nneg-distrib xs (- ys)
-                     | nneg-involutive ys
-                     | +-comm xs (- ys)
-                     | sym (+-assoc ys (- ys) xs)
-                     | +-elimʳ ys
-                     | +-identityˡ xs
-                     | sym (+-assoc xs (- xs) ys)
-                     | +-elimʳ xs
-                     | +-identityˡ ys
-                     | +-comm (- ys) xs
-                     = refl
+abs-sub≡max-sub-min : ∀ {n} (xs ys : Binary (suc n)) →
+    abs-sub xs ys ≡ maxᵘ xs ys - minᵘ xs ys
+abs-sub≡max-sub-min xs ys with trichotomyᵘ xs ys
+... | tri-lt _ = refl
+... | tri-eq refl rewrite +-elimʳ xs = refl
+... | tri-gt _ = refl
 
 -- Actual theorems
 ^-lte-∥ : ∀ {n} {xs ys : Binary (suc n)} → (xs ^ ys) ≤ᵘ (xs ∥ ys)
