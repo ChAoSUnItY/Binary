@@ -28,6 +28,12 @@ rca-no-carry {n} x y xs ys = begin
     (x xor y) ∷ rca xs ys (x ∧ y)
   ∎
 
+sum : Bit → Bit → Bit → Bit
+sum x y c = (x xor y) xor c
+
+carry : Bit → Bit → Bit → Bit
+carry x y c = (x ∧ y) ∨ (c ∧ (x xor y))
+
 -- Add result gives 3 possible addition outcomes for theorems to prove with,
 -- without the need to prove an additional unnecessary clause for 
 -- "either a bit is true".
@@ -92,36 +98,10 @@ rca-carry-transpose-incʳ xs ys = begin
 
 rca-carry-lift-inc : ∀ {n} (xs ys : Binary n) → rca xs ys I ≡ inc (rca xs ys O)
 rca-carry-lift-inc [] [] = refl
-rca-carry-lift-inc (x ∷ xs) (y ∷ ys) with x ∧ y in h1
-... | I =
-  begin
-    ((x xor y) xor I) ∷ rca xs ys I
-  ≡⟨ cong (λ l → (l xor I) ∷ rca xs ys I) (∧-true-implies-xor-false x y h1) ⟩
-    (O xor I) ∷ rca xs ys I
-  ≡⟨ cong (_∷ rca xs ys I) (xor-identityˡ I) ⟩
-    I ∷ rca xs ys I
-  ≡⟨⟩
-    inc (O ∷ rca xs ys I)
-  ≡⟨ cong (λ l → inc (l ∷ rca xs ys I)) (sym (∧-true-implies-xor-false x y h1)) ⟩
-    inc ((x xor y) ∷ rca xs ys I)
-  ≡⟨ cong (λ l → inc (l ∷ rca xs ys I)) (sym (xor-identityʳ (x xor y))) ⟩
-    inc (((x xor y) xor O) ∷ rca xs ys I)
-  ∎
-... | O with x xor y in h2
-...   | I = begin
-    O ∷ rca xs ys I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc xs ys) ⟩
-    O ∷ inc (rca xs ys O)
-  ≡⟨⟩
-    inc (I ∷ rca xs ys O)
-  ∎
-...   | O = refl
-
-inc?-lift : ∀ {n} (xs ys : Binary n) (b : Bit) → 
-  rca xs ys b ≡ (if b then (inc (xs + ys)) else (xs + ys))
-inc?-lift xs ys b with b
-... | O = refl
-... | I rewrite rca-carry-lift-inc xs ys = refl
+rca-carry-lift-inc (x ∷ xs) (y ∷ ys) with add-result x y
+... | case-zero refl refl = refl
+... | case-carry refl refl = refl
+... | case-one h∧ _ h⊕ rewrite h⊕ | h∧ = cong (O ∷_) (rca-carry-lift-inc xs ys)
 
 rca-inc-liftˡ : ∀ {n} (xs ys : Binary n) (c : Bit) → rca (inc xs) ys c ≡ inc (rca xs ys c)
 rca-inc-liftˡ xs ys O = begin
@@ -149,6 +129,31 @@ rca-inc-liftʳ xs ys c = begin
   ≡⟨ cong (inc) (rca-comm ys xs c) ⟩
     inc (rca xs ys c)
   ∎
+
+-- Conditional increment variants,
+-- this is usually used to push uncomputed bits
+-- with inc, which is not possible with original `inc`
+
+inc? : ∀ {n} → Bit → Binary n → Binary n
+inc? c xs = if c then inc xs else xs
+
+inc?-liftˡ : ∀ {n} b (xs ys : Binary n) → inc? b xs + ys ≡ inc? b (xs + ys)
+inc?-liftˡ O xs ys = refl
+inc?-liftˡ I xs ys = rca-inc-liftˡ xs ys O
+
+inc?-liftʳ : ∀ {n} b (xs ys : Binary n) → xs + inc? b ys ≡ inc? b (xs + ys)
+inc?-liftʳ O xs ys = refl
+inc?-liftʳ I xs ys = rca-inc-liftʳ xs ys O
+
+inc?-lift : ∀ {n} b (xs ys : Binary n) → 
+  rca xs ys b ≡ inc? b (xs + ys)
+inc?-lift b xs ys with b
+... | O = refl
+... | I rewrite rca-carry-lift-inc xs ys = refl
+
+rca-cons-inc? : ∀ {n} (xs ys : Binary n) (x y c : Bit) →
+  rca (x ∷ xs) (y ∷ ys) c ≡ sum x y c ∷ inc? (carry x y c) (xs + ys)
+rca-cons-inc? xs ys x y c = cong (sum x y c ∷_) (inc?-lift (carry x y c) xs ys)
 
 rca-inc-comm : ∀ {n} (xs ys : Binary n) (c : Bit) → rca (inc xs) ys c ≡ rca xs (inc ys) c
 rca-inc-comm xs ys c = begin
@@ -189,114 +194,64 @@ rca-carry-commʳ xs ys zs c c' = begin
     rca xs (rca ys zs c') c
   ∎
 
+-- Associativity
+
+-- Reorganizes bits to correct position in assoc proof
+bit-assoc-no-carry : ∀ {n} (x y z : Bit) (t : Binary n) →
+  sum (sum x y O) z O ∷ inc? (carry (sum x y O) z O) (inc? (carry x y O) t) ≡
+    sum x (sum y z O) O ∷ inc? (carry x (sum y z O) O) (inc? (carry y z O) t)
+bit-assoc-no-carry x y z t with x | y | z
+... | O | O | O = refl
+... | I | O | O = refl
+... | O | I | O = refl
+... | I | I | O = refl
+... | O | O | I = refl
+... | I | O | I = refl
+... | O | I | I = refl
+... | I | I | I = refl
+
 rca-assoc-no-carry : ∀ {n} (xs ys zs : Binary n) → rca (rca xs ys O) zs O ≡ rca xs (rca ys zs O) O
 rca-assoc-no-carry [] [] [] = refl
-rca-assoc-no-carry (x ∷ xs) (y ∷ ys) (z ∷ zs) with x | y | z
-... | O | O | O = begin
-    O ∷ rca (rca xs ys O) zs O
-  ≡⟨ cong (O ∷_) (rca-assoc-no-carry xs ys zs) ⟩
-    O ∷ rca xs (rca ys zs O) O
-  ∎
-... | I | O | O = begin
-    I ∷ rca (rca xs ys O) zs O
-  ≡⟨ cong (I ∷_) (rca-assoc-no-carry xs ys zs) ⟩
-    I ∷ rca xs (rca ys zs O) O
-  ∎
-... | O | I | O = begin
-    I ∷ rca (rca xs ys O) zs O
-  ≡⟨ cong (I ∷_) (rca-assoc-no-carry xs ys zs) ⟩
-    I ∷ rca xs (rca ys zs O) O
-  ∎
-... | I | I | O = begin
-    O ∷ rca (rca xs ys I) zs O
-  ≡⟨ cong (O ∷_) (rca-carry-commˡ xs ys zs I O) ⟩
-    O ∷ rca (rca xs ys O) zs I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc (rca xs ys O) zs) ⟩
-    O ∷ inc (rca (rca xs ys O) zs O)
-  ≡⟨ cong (λ l → O ∷ inc l) (rca-assoc-no-carry xs ys zs) ⟩
-    O ∷ inc (rca xs (rca ys zs O) O)
-  ≡⟨ cong (O ∷_) (sym (rca-carry-lift-inc xs (rca ys zs O))) ⟩
-    O ∷ rca xs (rca ys zs O) I
-  ∎
-... | O | O | I = begin
-    I ∷ rca (rca xs ys O) zs O
-  ≡⟨ cong (I ∷_) (rca-assoc-no-carry xs ys zs) ⟩
-    I ∷ rca xs (rca ys zs O) O
-  ∎
-... | I | O | I = begin
-    O ∷ rca (rca xs ys O) zs I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc (rca xs ys O) zs) ⟩
-    O ∷ inc (rca (rca xs ys O) zs O)
-  ≡⟨ cong (λ l → O ∷ inc l) (rca-assoc-no-carry xs ys zs) ⟩
-    O ∷ inc (rca xs (rca ys zs O) O)
-  ≡⟨ cong (O ∷_) (sym (rca-carry-lift-inc xs (rca ys zs O))) ⟩
-    O ∷ rca xs (rca ys zs O) I
-  ∎
-... | O | I | I = begin
-    O ∷ rca (rca xs ys O) zs I
-  ≡⟨ cong (O ∷_) (rca-carry-lift-inc (rca xs ys O) zs) ⟩
-    O ∷ inc (rca (rca xs ys O) zs O)
-  ≡⟨ cong (λ l → O ∷ inc l) (rca-assoc-no-carry xs ys zs) ⟩
-    O ∷ inc (rca xs (rca ys zs O) O)
-  ≡⟨ cong (O ∷_) (sym (rca-inc-liftʳ xs (rca ys zs O) O)) ⟩
-    O ∷ rca xs (inc (rca ys zs O)) O
-  ≡⟨ cong (λ l → O ∷ rca xs l O) (sym (rca-carry-lift-inc ys zs)) ⟩
-    O ∷ rca xs (rca ys zs I) O
-  ∎
-... | I | I | I = begin
-    I ∷ rca (rca xs ys I) zs O
-  ≡⟨ cong (I ∷_) (rca-carry-commˡ xs ys zs I O) ⟩
-    I ∷ rca (rca xs ys O) zs I
-  ≡⟨ cong (I ∷_) (rca-carry-lift-inc (rca xs ys O) zs) ⟩
-    I ∷ inc (rca (rca xs ys O) zs O)
-  ≡⟨ cong (λ l → I ∷ inc l) (rca-assoc-no-carry xs ys zs) ⟩
-    I ∷ inc (rca xs (rca ys zs O) O)
-  ≡⟨ cong (I ∷_) (sym (rca-inc-liftʳ xs (rca ys zs O) O)) ⟩
-    I ∷ rca xs (inc (rca ys zs O)) O
-  ≡⟨ cong (λ l → I ∷ rca xs l O) (sym (rca-carry-lift-inc ys zs)) ⟩
-    I ∷ rca xs (rca ys zs I) O
+rca-assoc-no-carry (x ∷ xs) (y ∷ ys) (z ∷ zs) = begin
+    (x ∷ xs) + (y ∷ ys) + (z ∷ zs)
+  ≡⟨ cong (λ l → l + (z ∷ zs)) (rca-cons-inc? xs ys x y O) ⟩
+    (sum x y O ∷ inc? (carry x y O) (xs + ys)) + (z ∷ zs)
+  ≡⟨ rca-cons-inc? _ zs (sum x y O) z O ⟩
+    sum (sum x y O) z O ∷ inc? (carry (sum x y O) z O) (inc? (carry x y O) (xs + ys) + zs)
+  ≡⟨ cong (λ l → sum (sum x y O) z O ∷ inc? (carry (sum x y O) z O) l)
+      (inc?-liftˡ (carry x y O) (xs + ys) zs) ⟩
+    sum (sum x y O) z O ∷ inc? (carry (sum x y O) z O) (inc? (carry x y O) (xs + ys + zs))
+  ≡⟨ cong (λ l → sum (sum x y O) z O ∷ inc? (carry (sum x y O) z O) (inc? (carry x y O) l))
+      (rca-assoc-no-carry xs ys zs) ⟩
+    sum (sum x y O) z O ∷ inc? (carry (sum x y O) z O) (inc? (carry x y O) (xs + (ys + zs)))
+  ≡⟨ bit-assoc-no-carry x y z (xs + (ys + zs)) ⟩
+    sum x (sum y z O) O ∷ inc? (carry x (sum y z O) O) (inc? (carry y z O) (xs + (ys + zs)))
+  ≡⟨ cong (λ l → sum x (sum y z O) O ∷ inc? (carry x (sum y z O) O) l) 
+      (sym (inc?-liftʳ (carry y z O) xs (ys + zs))) ⟩
+    sum x (sum y z O) O ∷ inc? (carry x (sum y z O) O) (xs + inc? (carry y z O) (ys + zs))
+  ≡⟨ sym (rca-cons-inc? xs _ x (sum y z O) O) ⟩
+    (x ∷ xs) + (sum y z O ∷ inc? (carry y z O) (ys + zs))
+  ≡⟨ cong ((x ∷ xs) +_) (sym (rca-cons-inc? ys zs y z O)) ⟩
+    (x ∷ xs) + ((y ∷ ys) + (z ∷ zs))
   ∎
 
 rca-assoc : ∀ {n} (xs ys zs : Binary n) (c c' : Bit) → rca (rca xs ys c) zs c' ≡ rca xs (rca ys zs c) c'
-rca-assoc xs ys zs O O = rca-assoc-no-carry xs ys zs
-rca-assoc xs ys zs I O = begin
-    rca (rca xs ys I) zs O
-  ≡⟨ cong (λ l → rca l zs O) (rca-carry-lift-inc xs ys) ⟩
-    rca (inc (rca xs ys O)) zs O
-  ≡⟨ rca-inc-liftˡ (rca xs ys O) zs O ⟩
-    inc (rca (rca xs ys O) zs O)
-  ≡⟨ cong (inc) (rca-assoc-no-carry xs ys zs) ⟩
-    inc (rca xs (rca ys zs O) O)
-  ≡⟨ sym (rca-inc-liftʳ xs (rca ys zs O) O) ⟩
-    rca xs (inc (rca ys zs O)) O
-  ≡⟨ cong (λ l → rca xs l O) (sym (rca-carry-lift-inc ys zs)) ⟩
-    rca xs (rca ys zs I) O
-  ∎
-rca-assoc xs ys zs O I = begin
-    rca (rca xs ys O) zs I
-  ≡⟨ rca-carry-lift-inc (rca xs ys O) zs ⟩
-    inc (rca (rca xs ys O) zs O)
-  ≡⟨ cong (inc) (rca-assoc-no-carry xs ys zs) ⟩
-    inc (rca xs (rca ys zs O) O)
-  ≡⟨ sym (rca-carry-lift-inc xs (rca ys zs O)) ⟩
-    rca xs (rca ys zs O) I
-  ∎
-rca-assoc xs ys zs I I = begin
-    rca (rca xs ys I) zs I
-  ≡⟨ rca-carry-lift-inc (rca xs ys I) zs ⟩
-    inc (rca (rca xs ys I) zs O)
-  ≡⟨ cong (λ l → inc (rca l zs O)) (rca-carry-lift-inc xs ys) ⟩
-    inc (rca (inc (rca xs ys O)) zs O)
-  ≡⟨ cong (inc) (rca-inc-liftˡ (rca xs ys O) zs O) ⟩
-    inc (inc (rca (rca xs ys O) zs O))
-  ≡⟨ cong (λ l → inc (inc l)) (rca-assoc-no-carry xs ys zs) ⟩
-    inc (inc (rca xs (rca ys zs O) O))
-  ≡⟨ cong (inc) (sym (rca-inc-liftʳ xs (rca ys zs O) O)) ⟩
-    inc (rca xs (inc (rca ys zs O)) O)
-  ≡⟨ cong (λ l → inc (rca xs l O)) (sym (rca-carry-lift-inc ys zs)) ⟩
-    inc (rca xs (rca ys zs I) O)
-  ≡⟨ sym (rca-carry-lift-inc xs (rca ys zs I)) ⟩
-    rca xs (rca ys zs I) I
+rca-assoc xs ys zs c c' = begin
+    rca (rca xs ys c) zs c'
+  ≡⟨ inc?-lift c' _ zs ⟩
+    inc? c' (rca xs ys c + zs)
+  ≡⟨ cong (λ l → inc? c' (l + zs)) (inc?-lift c _ ys ) ⟩
+    inc? c' (inc? c (xs + ys) + zs)
+  ≡⟨ cong (inc? c') (inc?-liftˡ c (xs + ys) zs) ⟩
+    inc? c' (inc? c (xs + ys + zs))
+  ≡⟨ cong (λ l → inc? c' (inc? c l)) (rca-assoc-no-carry xs ys zs) ⟩
+    inc? c' (inc? c (xs + (ys + zs)))
+  ≡⟨ cong (inc? c') (sym (inc?-liftʳ c xs _)) ⟩
+    inc? c' (xs + inc? c (ys + zs))
+  ≡⟨ cong (λ l → inc? c' (xs + l)) (sym (inc?-lift c ys zs)) ⟩
+    inc? c' (xs + rca ys zs c)
+  ≡⟨ sym (inc?-lift c' xs _) ⟩
+    rca xs (rca ys zs c) c'
   ∎
 
 -- Actual addition theorems to be used with
